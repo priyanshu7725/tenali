@@ -1,66 +1,239 @@
 {
-  "gst-api": "percent-api",
-  "section-api": "coordgeom-api",
-  "linprog-api": "ineq-api",
-  "circmeasure-api": "trig-api",
-  "conics-api": "coordgeom-api",
-  "diffeq-api": "integ-api",
-  "invtrig-api": "trig-api",
-  "remfactor-api": "polyfactor-api",
-  "heron-api": "triangles-api",
-  "shares-api": "percent-api",
-  "banking-api": "percent-api",
-  "limits-api": "sequences-api",
-  "permcomb-api": "basicarith-api",
-  "decimals-api": "basicarith-api",
-  "lineareq-api": "basicarith-api",
-  "similarity-api": "congruence-api",
-  "polygons-api": "triangles-api",
-  "pythag-api": "squaring-api",
-  "congruence-api": "triangles-api",
-  "triangles-api": "angles-api",
-  "angles-api": null,
-  "complex-api": "qformula-api",
-  "binomial-api": "polymul-api",
-  "rounding-api": "basicarith-api",
-  "profitloss-api": "percent-api",
-  "hcflcm-api": "multiply-api",
-  "primefactor-api": "hcflcm-api",
-  "variation-api": "ratio-api",
-  "sdt-api": "ratio-api",
-  "bounds-api": "rounding-api",
-  "stdform-api": "indices-api",
-  "integ-api": "diff-api",
-  "circle-api": "triangles-api",
-  "bases-api": "basicarith-api",
-  "diff-api": "limits-api",
-  "log-api": "indices-api",
-  "bearings-api": "angles-api",
-  "transform-api": "coordgeom-api",
-  "mensur-api": "multiply-api",
-  "vectors-api": "basicarith-api",
-  "matrix-api": "multiply-api",
-  "stats-api": "basicarith-api",
-  "prob-api": "fractionadd-api",
-  "coordgeom-api": "pythag-api",
-  "ineq-api": "basicarith-api",
-  "trig-api": "pythag-api",
-  "lineq-api": "coordgeom-api",
-  "simul-api": "lineareq-api",
-  "qformula-api": "polyfactor-api",
-  "polyfactor-api": "polymul-api",
-  "polymul-api": "multiply-api",
-  "quadratic-api": "indices-api",
-  "funceval-api": "basicarith-api",
-  "sqrt-api": "multiply-api",
-  "surds-api": "indices-api",
-  "indices-api": "multiply-api",
-  "percent-api": "fractionadd-api",
-  "fractionadd-api": "multiply-api",
-  "squaring-api": "multiply-api",
-  "multiply-api": "basicarith-api",
-  "basicarith-api": "addition-api",
-  "addition-api": null,
-  "sets-api": "basicarith-api",
-  "dotprod-api": "vectors-api"
+  "addition-api": [
+    "basicarith-api"
+  ],
+  "multiply-api": [
+    "basicarith-api"
+  ],
+  "rounding-api": [
+    "basicarith-api"
+  ],
+  "squaring-api": [
+    "multiply-api",
+    "addition-api"
+  ],
+  "fractionadd-api": [
+    "multiply-api"
+  ],
+  "percent-api": [
+    "fractionadd-api",
+    "ratio-api"
+  ],
+  "profitloss-api": [
+    "percent-api"
+  ],
+  "ratio-api": [
+    "basicarith-api"
+  ],
+  "sdt-api": [
+    "multiply-api",
+    "ratio-api"
+  ],
+  "hcflcm-api": [
+    "multiply-api"
+  ],
+  "primefactor-api": [
+    "hcflcm-api"
+  ],
+  "bases-api": [
+    "basicarith-api"
+  ],
+  "indices-api": [
+    "multiply-api"
+  ],
+  "surds-api": [
+    "indices-api"
+  ],
+  "log-api": [
+    "indices-api"
+  ],
+  "stdform-api": [
+    "indices-api"
+  ],
+  "sqrt-api": [
+    "multiply-api",
+    "squaring-api"
+  ],
+  "funceval-api": [
+    "basicarith-api"
+  ],
+  "quadratic-api": [
+    "multiply-api",
+    "indices-api"
+  ],
+  "polymul-api": [
+    "multiply-api",
+    "indices-api"
+  ],
+  "polyfactor-api": [
+    "polymul-api"
+  ],
+  "qformula-api": [
+    "polyfactor-api",
+    "sqrt-api"
+  ],
+  "simul-api": [
+    "basicarith-api",
+    "funceval-api",
+    "lineareq-api"
+  ],
+  "ineq-api": [
+    "basicarith-api",
+    "polyfactor-api"
+  ],
+  "sequences-api": [
+    "basicarith-api",
+    "multiply-api",
+    "indices-api"
+  ],
+  "variation-api": [
+    "ratio-api",
+    "indices-api"
+  ],
+  "binomial-api": [
+    "indices-api",
+    "polymul-api"
+  ],
+  "complex-api": [
+    "sqrt-api",
+    "qformula-api"
+  ],
+  "bounds-api": [
+    "rounding-api"
+  ],
+  "angles-api": [
+    "basicarith-api"
+  ],
+  "triangles-api": [
+    "angles-api"
+  ],
+  "polygons-api": [
+    "angles-api",
+    "triangles-api"
+  ],
+  "congruence-api": [
+    "triangles-api"
+  ],
+  "similarity-api": [
+    "triangles-api",
+    "ratio-api"
+  ],
+  "pythag-api": [
+    "triangles-api",
+    "squaring-api"
+  ],
+  "circle-api": [
+    "angles-api",
+    "triangles-api"
+  ],
+  "mensur-api": [
+    "multiply-api",
+    "squaring-api",
+    "polygons-api"
+  ],
+  "transform-api": [
+    "angles-api",
+    "coordgeom-api"
+  ],
+  "bearings-api": [
+    "angles-api"
+  ],
+  "coordgeom-api": [
+    "basicarith-api",
+    "pythag-api"
+  ],
+  "lineq-api": [
+    "coordgeom-api",
+    "fractionadd-api"
+  ],
+  "trig-api": [
+    "pythag-api",
+    "angles-api",
+    "ratio-api"
+  ],
+  "diff-api": [
+    "indices-api",
+    "polymul-api",
+    "quadratic-api",
+    "limits-api"
+  ],
+  "integ-api": [
+    "diff-api"
+  ],
+  "stats-api": [
+    "basicarith-api"
+  ],
+  "prob-api": [
+    "fractionadd-api",
+    "basicarith-api"
+  ],
+  "sets-api": [
+    "basicarith-api"
+  ],
+  "vectors-api": [
+    "basicarith-api"
+  ],
+  "dotprod-api": [
+    "vectors-api",
+    "matrix-api"
+  ],
+  "matrix-api": [
+    "multiply-api",
+    "basicarith-api"
+  ],
+  "decimals-api": [
+    "basicarith-api"
+  ],
+  "lineareq-api": [
+    "basicarith-api"
+  ],
+  "shares-api": [
+    "basicarith-api",
+    "percent-api"
+  ],
+  "banking-api": [
+    "basicarith-api",
+    "percent-api"
+  ],
+  "gst-api": [
+    "percent-api"
+  ],
+  "permcomb-api": [
+    "basicarith-api"
+  ],
+  "limits-api": [
+    "sequences-api"
+  ],
+  "invtrig-api": [
+    "trig-api"
+  ],
+  "circmeasure-api": [
+    "trig-api"
+  ],
+  "section-api": [
+    "coordgeom-api"
+  ],
+  "conics-api": [
+    "coordgeom-api"
+  ],
+  "remfactor-api": [
+    "polyfactor-api",
+    "polymul-api"
+  ],
+  "heron-api": [
+    "pythag-api",
+    "triangles-api",
+    "mensur-api"
+  ],
+  "linprog-api": [
+    "lineareq-api",
+    "ineq-api"
+  ],
+  "diffeq-api": [
+    "diff-api",
+    "integ-api"
+  ],
+  "gk-api": [],
+  "vocab-api": [],
+  "basicarith-api": []
 }

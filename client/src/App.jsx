@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Tenali - Educational Quiz Platform (React Frontend)
  *
@@ -44541,6 +44540,14 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     const submittedRef = useRef(false)
     const advancedRef = useRef(false)
 
+    // Hesitation Monitor State (Soft Intervention)
+    const [hesitationPopupActive, setHesitationPopupActive] = useState(false)
+    const hesitationShownRef = useRef(false)
+    const hesitationCooldownRef = useRef(0)
+    const clearCountRef = useRef(0)
+    const idleTimerRef = useRef(null)
+    const lastAnswerStrRef = useRef('')
+
     // ── Feature P v0.1: Struggle Detection & Warmup State ─────────────────────
     // frozenQuizState: snapshot taken when warmup fires (not used for restore in
     // v0.1 since React state is never mutated during warmup, but kept as a
@@ -44625,7 +44632,12 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       setWarmupPrereqTopic(null)
       setWarmupLoading(false)
       sessionWarmupTopicsRef.current = new Set()  // fresh session, fresh warmups
-      // Feature P v0.3 resets
+      setHesitationPopupActive(false)
+      hesitationShownRef.current = false
+      hesitationCooldownRef.current = 0
+      clearCountRef.current = 0
+      lastAnswerStrRef.current = ''
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
       setStruggleCount(0)
       setPickerActive(false)
       setPickerTopics([])
@@ -44646,6 +44658,77 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       window.addEventListener('keydown', h)
       return () => window.removeEventListener('keydown', h)
     }, [revealed, isCorrect, questionNumber])
+
+    // Reset hesitation state on new question
+    useEffect(() => {
+      if (questionNumber > 0) {
+        setHesitationPopupActive(false)
+        hesitationShownRef.current = false
+        clearCountRef.current = 0
+        lastAnswerStrRef.current = ''
+        if (hesitationCooldownRef.current > 0) {
+          hesitationCooldownRef.current--
+        }
+      }
+    }, [questionNumber])
+
+    // Hesitation tracking logic
+    useEffect(() => {
+      if (!started || finished || warmupActive || pickerActive || learnRecActive || hesitationPopupActive) return
+
+      const triggerIntervention = (reason) => {
+        setHesitationPopupActive(true)
+        hesitationShownRef.current = true
+      }
+
+      const resetTimer = () => {
+        if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+        if (hesitationShownRef.current || hesitationCooldownRef.current > 0) return
+        idleTimerRef.current = setTimeout(() => {
+          triggerIntervention('idle_timeout')
+        }, 60000)
+      }
+
+      const handleInput = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          if (hesitationShownRef.current || hesitationCooldownRef.current > 0) return
+          const val = e.target.value
+          // Detect clearing of input
+          if (val === '' && lastAnswerStrRef.current !== '') {
+            clearCountRef.current++
+            if (clearCountRef.current >= 3) {
+              if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+              triggerIntervention('frequent_clears')
+            }
+          }
+          lastAnswerStrRef.current = val
+          resetTimer()
+        }
+      }
+
+      const handleFocus = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          resetTimer()
+        }
+      }
+
+      const handleBlur = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+        }
+      }
+
+      window.addEventListener('input', handleInput)
+      window.addEventListener('focus', handleFocus, true)
+      window.addEventListener('blur', handleBlur, true)
+
+      return () => {
+        window.removeEventListener('input', handleInput)
+        window.removeEventListener('focus', handleFocus, true)
+        window.removeEventListener('blur', handleBlur, true)
+        if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      }
+    }, [started, finished, warmupActive, pickerActive, learnRecActive, hesitationPopupActive])
 
     const reportDifficulty = (wasDifficult) => {
       if (!isAdaptive) return
@@ -44742,10 +44825,10 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       if (next.length >= 4 && wrongs >= 3) {
         historyWindowRef.current = []
         cooldownRef.current = 4
-        
+
         const nextStruggleCount = struggleCount + 1
         setStruggleCount(nextStruggleCount)
-        
+
         if (nextStruggleCount === 1) triggerAutoWarmup()
         else if (nextStruggleCount === 2) triggerPicker()
         else triggerLearnRec()
@@ -44776,7 +44859,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     const triggerAutoWarmup = async () => {
       setWarmupLoading(true)
       const prereqs = await fetchPrereqs(apiPath)
-      
+
       if (prereqs.length === 0) {
         setWarmupLoading(false)
         triggerLearnRec(prereqs)
@@ -44931,6 +45014,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       setWarmupLoading(false)
       historyWindowRef.current = []  // fresh window after warmup
       cooldownRef.current = 4        // suppress trigger for next 4 questions
+      hesitationCooldownRef.current = 2 // suppress hesitation monitor for next 2 questions
       if (warmupPrereqTopic) sessionWarmupTopicsRef.current.add(warmupPrereqTopic)  // don't show this warmup again this session
     }
     // ──────────────────────────────────────────────────────────────────────────
@@ -44961,27 +45045,27 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
                   return (
                     <div key={pt.topic} style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '12px 16px', background: 'var(--bg-card, #f8f9fa)',
-                      borderRadius: '8px', border: '1px solid var(--border-color, #eee)'
+                      padding: '12px 16px', background: 'var(--clr-surface, #f8f9fa)',
+                      borderRadius: '8px', border: '1px solid var(--clr-border, #eee)'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '1.2rem' }}>
                           {pt.completed ? '✓' : !pt.supported ? '⚠' : pt.recommended ? '⭐' : ' '}
                         </span>
-                        <span style={{ 
+                        <span style={{
                           fontWeight: 500,
                           color: !pt.supported && !pt.completed ? 'var(--clr-dim, #888)' : 'inherit'
                         }}>
                           {pt.displayName} {pt.recommended && <span style={{ fontSize: '0.75rem', color: '#ff9800', marginLeft: '4px' }}>(Recommended)</span>}
                         </span>
                       </div>
-                      <button 
+                      <button
                         onClick={() => { setPickerActive(false); startWarmupForTopic(pt.topic) }}
                         disabled={!actionEnabled}
                         style={{
                           padding: '6px 12px', fontSize: '0.85rem',
-                          background: actionEnabled ? 'var(--clr-primary, #4caf50)' : 'var(--border-color, #eee)',
-                          color: actionEnabled ? 'white' : 'var(--clr-dim, #888)',
+                          background: actionEnabled ? 'var(--clr-primary, #4caf50)' : 'var(--clr-input, #eee)',
+                          color: actionEnabled ? 'white' : 'var(--clr-text-soft, #888)',
                           border: 'none', borderRadius: '4px', cursor: actionEnabled ? 'pointer' : 'not-allowed'
                         }}
                       >
@@ -45021,30 +45105,61 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
           </div>
         )}
 
+        {hesitationPopupActive && (
+          <div style={{
+            position: 'absolute', top: '20px', right: '20px', background: 'var(--clr-card, white)', color: 'var(--clr-text, #333)',
+            padding: '16px 20px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1000,
+            display: 'flex', flexDirection: 'column', gap: '12px', animation: 'slideIn 0.3s ease-out', maxWidth: '350px', borderLeft: '4px solid var(--clr-primary, #4caf50)'
+          }}>
+            <div>
+              <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '1.05rem' }}>Need a quick refresher?</p>
+              <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.4 }}>You've been on this question for a while. Would you like to review a prerequisite before continuing?</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <button 
+                onClick={() => setHesitationPopupActive(false)} 
+                style={{
+                  padding: '6px 12px', fontSize: '0.85rem', background: 'transparent', 
+                  border: '1px solid var(--clr-border, #ddd)', color: 'var(--clr-text, #333)', borderRadius: '4px', cursor: 'pointer'
+                }}>
+                Keep Trying
+              </button>
+              <button 
+                onClick={() => { setHesitationPopupActive(false); triggerPicker(); }} 
+                style={{
+                  padding: '6px 12px', fontSize: '0.85rem', background: 'var(--clr-primary, #4caf50)', 
+                  border: 'none', color: 'white', borderRadius: '4px', cursor: 'pointer', fontWeight: 600
+                }}>
+                Review Prerequisites
+              </button>
+            </div>
+          </div>
+        )}
+
         {warmupActive && (
           <div className="warmup-overlay-backdrop">
             <div className="warmup-overlay-card">
               <div style={{ fontSize: '2.2rem', textAlign: 'center', marginBottom: '6px' }}>🧠</div>
               <p style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.1rem', margin: '0 0 4px' }}>Quick Warmup!</p>
               <p style={{ textAlign: 'center', fontSize: '0.83rem', color: 'var(--clr-dim, #888)', margin: '0 0 20px' }}>
-                {warmupPrereqTopic 
+                {warmupPrereqTopic
                   ? `Let's refresh some basics in ${getTopicDisplayName(warmupPrereqTopic)} — 3 quick ungraded questions.`
                   : "Let's refresh some basics — 3 quick ungraded questions."}
               </p>
               {warmupLoading
                 ? <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--clr-dim, #888)', fontSize: '0.9rem' }}>Loading warmup questions…</div>
                 : <>
-                    <div style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--clr-dim, #888)', marginBottom: '10px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Warmup Question {warmupStep + 1} of 3</div>
-                    <div style={{ textAlign: 'center', fontSize: '1.2rem', fontWeight: 600, marginBottom: '18px', lineHeight: 1.5 }}>{warmupQuestions[warmupStep]?.prompt ?? warmupQuestions[warmupStep]?.question ?? '…'}</div>
-                    <input className="answer-input" type="text" value={warmupAnswer} onChange={e => { if (!warmupRevealed) setWarmupAnswer(e.target.value) }} disabled={warmupRevealed} placeholder="Type your answer" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!warmupRevealed) handleWarmupSubmit() } }} autoFocus style={{ width: '100%', marginBottom: '10px' }} />
-                    {warmupFeedback && <div style={{ textAlign: 'center', marginBottom: '12px', fontWeight: 600, fontSize: '0.95rem', color: warmupFeedback.startsWith('✅') ? 'var(--clr-correct, #4caf50)' : 'var(--clr-wrong, #f44336)' }}>{warmupFeedback}</div>}
-                    <div className="button-row">
-                      {!warmupRevealed
-                        ? <button onClick={handleWarmupSubmit} disabled={!warmupAnswer.trim()}>Check Answer</button>
-                        : <button onClick={handleWarmupNext}>{warmupStep < 2 ? 'Next →' : '🎉 Back to Quiz!'}</button>
-                      }
-                    </div>
-                  </>
+                  <div style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--clr-dim, #888)', marginBottom: '10px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Warmup Question {warmupStep + 1} of 3</div>
+                  <div style={{ textAlign: 'center', fontSize: '1.2rem', fontWeight: 600, marginBottom: '18px', lineHeight: 1.5 }}>{warmupQuestions[warmupStep]?.prompt ?? warmupQuestions[warmupStep]?.question ?? '…'}</div>
+                  <input className="answer-input" type="text" value={warmupAnswer} onChange={e => { if (!warmupRevealed) setWarmupAnswer(e.target.value) }} disabled={warmupRevealed} placeholder="Type your answer" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!warmupRevealed) handleWarmupSubmit() } }} autoFocus style={{ width: '100%', marginBottom: '10px' }} />
+                  {warmupFeedback && <div style={{ textAlign: 'center', marginBottom: '12px', fontWeight: 600, fontSize: '0.95rem', color: warmupFeedback.startsWith('✅') ? 'var(--clr-correct, #4caf50)' : 'var(--clr-wrong, #f44336)' }}>{warmupFeedback}</div>}
+                  <div className="button-row">
+                    {!warmupRevealed
+                      ? <button onClick={handleWarmupSubmit} disabled={!warmupAnswer.trim()}>Check Answer</button>
+                      : <button onClick={handleWarmupNext}>{warmupStep < 2 ? 'Next →' : '🎉 Back to Quiz!'}</button>
+                    }
+                  </div>
+                </>
               }
               <button className="warmup-skip-btn" onClick={completeWarmup}>
                 Skip Warmup & Return to Quiz
