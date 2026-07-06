@@ -126,6 +126,31 @@ app.use((req, res, next) => {
 });
 
 /**
+ * Display-normalisation middleware — always-on for all /check endpoints.
+ * Ensures every check response includes a `display` field so the client
+ * can render the correct answer with a single consistent key.
+ * Priority: display > correctDisplay > correctAnswer > correctAnswerText > answer
+ */
+app.use((req, res, next) => {
+  if (req.method !== 'POST' || !req.path.includes('-api/check')) {
+    return next();
+  }
+  const originalJson = res.json.bind(res);
+  res.json = function (data) {
+    if (data && typeof data === 'object' && !('display' in data)) {
+      data.display =
+        data.correctDisplay ??
+        (data.correctAnswer != null ? String(data.correctAnswer) : undefined) ??
+        data.correctAnswerText ??
+        (data.answer != null ? String(data.answer) : undefined) ??
+        '';
+    }
+    return originalJson(data);
+  };
+  next();
+});
+
+/**
  * Generate a detailed, educational step-by-step explanation for how to solve the problem.
  * Covers all ~60 puzzle types with contextual teaching.
  *
@@ -3581,7 +3606,8 @@ app.get('/indices-api/question', (req, res) => {
  */
 app.post('/indices-api/check', express.json(), (req, res) => {
   const { type, answerExp, answerNum, answerDen } = req.body;
-  const userAnswer = (req.body.answer || '').replace(/\s+/g, '').replace(/−/g, '-');
+  // Accept both `userAnswer` (sent by warmup client) and `answer` (original field name)
+  const userAnswer = (req.body.userAnswer || req.body.answer || '').replace(/\s+/g, '').replace(/−/g, '-');
 
   let correct = false;
   let display = '';

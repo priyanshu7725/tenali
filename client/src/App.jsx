@@ -44772,16 +44772,18 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
               }
             }
           }
-          if (unique.length === 3) {
-            // All 3 questions came from the live API — use the API checker
-            setWarmupQuestions(unique)
+          if (unique.length > 0) {
+            // Tag real API questions so the checker knows to call /check for them
+            const taggedApi = unique.map(q => ({ ...q, _source: 'api', _topic: resolvedTopic }))
+            // Pad with local fallback questions tagged as local
+            const taggedLocal = WARMUP_QUESTIONS_V01.map(q => ({ ...q, _source: 'local' }))
+            const fetches = [...taggedApi, ...taggedLocal].slice(0, 3)
+            setWarmupQuestions(fetches)
+            // Keep resolvedTopic for sessionWarmupTopicsRef tracking in completeWarmup
             setWarmupPrereqTopic(resolvedTopic)
           } else {
-            // Not enough questions from this topic's API — pad with local fallback
-            // questions and null out the topic so the local checker is used.
-            // This prevents sending a simple addition question to e.g. /polymul-api/check.
-            const fetches = [...unique, ...WARMUP_QUESTIONS_V01].slice(0, 3)
-            setWarmupQuestions(fetches)
+            // API returned nothing — pure local fallback
+            setWarmupQuestions(WARMUP_QUESTIONS_V01.map(q => ({ ...q, _source: 'local' })))
             setWarmupPrereqTopic(null)
           }
         } else {
@@ -44796,32 +44798,35 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     }
 
     // handleWarmupSubmit()
-    //   Feature P v0.2: calls the prerequisite topic's /check endpoint when
-    //   dynamic questions are loaded. Falls back to local numeric compare
-    //   (v0.1 behaviour) when using WARMUP_QUESTIONS_V01.
+    //   Feature P v0.2: per-question mixed checker.
+    //   Questions tagged _source:'api' are checked against the live prerequisite
+    //   topic's /check endpoint (server now always returns a normalised `display`).
+    //   Questions tagged _source:'local' (or untagged fallback) use the local
+    //   numeric comparator so we never send an addition question to a maths API.
     const handleWarmupSubmit = async () => {
       if (!warmupAnswer.trim() || warmupRevealed) return
       const q = warmupQuestions[warmupStep]
-      if (warmupPrereqTopic && q) {
+      if (q?._source === 'api' && q?._topic) {
         try {
-          const checkRes = await fetch(`${API}/${warmupPrereqTopic}/check`, {
+          const checkRes = await fetch(`${API}/${q._topic}/check`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...q, userAnswer: warmupAnswer.trim() }),
           })
           const data = await checkRes.json()
           setWarmupRevealed(true)
+          // Server always returns display after normalisation middleware
           setWarmupFeedback(
             data.correct
               ? '✅ Correct!'
-              : `❌ The answer is ${data.display ?? data.correctAnswer ?? data.answer ?? '?'}`
+              : `❌ The answer is ${data.display || '?'}`
           )
         } catch {
           setWarmupRevealed(true)
           setWarmupFeedback('❌ Could not verify answer — try again')
         }
       } else {
-        // v0.1 fallback: local numeric compare
+        // Local numeric compare for fallback WARMUP_QUESTIONS_V01
         const expected = q?.answer
         const isRight = Number(warmupAnswer.trim()) === expected
         setWarmupRevealed(true)
