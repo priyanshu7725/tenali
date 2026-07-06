@@ -44701,7 +44701,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
           setWarmupFeedback(
             data.correct
               ? '✅ Correct!'
-              : `❌ The answer is ${data.correctAnswer ?? data.answer ?? '?'}`
+              : `❌ The answer is ${data.display ?? data.correctAnswer ?? data.answer ?? '?'}`
           )
         } catch {
           setWarmupRevealed(true)
