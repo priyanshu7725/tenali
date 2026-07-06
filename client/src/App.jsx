@@ -44479,6 +44479,14 @@ const WARMUP_SUPPORTED_TOPICS = new Set([
   'multiply-api',
   'basicarith-api',
   'sqrt-api',
+  'quadratic-api',
+  'squaring-api',
+  'lineareq-api',
+  'rounding-api',
+  'ratio-api',
+  'percent-api',
+  'decimals-api',
+  'sequences-api'
 ])
 
 // getWarmupPrompt(q)

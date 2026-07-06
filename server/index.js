@@ -1241,7 +1241,7 @@ app.get('/addition-api/question', (req, res) => {
  */
 app.post('/addition-api/check', (req, res) => {
   const { a, b } = req.body || {};
-  const userAnswer = req.body.userAnswer || req.body.answer;
+  const userAnswer = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
   const correctAnswer = Number(a) + Number(b);
   const correct = Number(userAnswer) === correctAnswer;
   res.json({ correct, correctAnswer, message: correct ? 'Correct' : 'Incorrect' });
@@ -1392,8 +1392,9 @@ app.get('/quadratic-api/question', (req, res) => {
  */
 app.post('/quadratic-api/check', (req, res) => {
   const { a, b, c, x, answer } = req.body || {};
+  const userAnswer = req.body.userAnswer !== undefined ? req.body.userAnswer : answer;
   const correctAnswer = Number(a) * Number(x) * Number(x) + Number(b) * Number(x) + Number(c);
-  const correct = Number(answer) === correctAnswer;
+  const correct = Number(userAnswer) === correctAnswer;
   res.json({ correct, correctAnswer, message: correct ? 'Correct' : 'Incorrect' });
 });
 
@@ -1482,7 +1483,7 @@ app.get('/sqrt-api/question', (req, res) => {
  */
 app.post('/sqrt-api/check', (req, res) => {
   const { q } = req.body || {};
-  const userAnswer = req.body.userAnswer || req.body.answer;
+  const userAnswer = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
   const sqrt = Math.sqrt(Number(q));
   const floorAnswer = Math.floor(sqrt);
   const ceilAnswer = Math.ceil(sqrt);
@@ -1653,7 +1654,7 @@ app.get('/multiply-api/question', (req, res) => {
  */
 app.post('/multiply-api/check', (req, res) => {
   const { table, multiplier } = req.body || {};
-  const userAnswer = req.body.userAnswer || req.body.answer;
+  const userAnswer = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
   const correctAnswer = Number(table) * Number(multiplier);
   const correct = Number(userAnswer) === correctAnswer;
   res.json({ correct, correctAnswer, message: correct ? 'Correct' : 'Incorrect' });
@@ -2803,7 +2804,8 @@ app.post('/basicarith-api/check', (req, res) => {
     // so this is just a safety net.
     correctAnswer = Number(b) === 0 ? NaN : Number(a) / Number(b);
   } else correctAnswer = NaN;
-  const correct = Number(answer) === correctAnswer;
+  const userAnswer = req.body.userAnswer !== undefined ? req.body.userAnswer : answer;
+  const correct = Number(userAnswer) === correctAnswer;
   res.json({ correct, correctAnswer, message: correct ? 'Correct' : 'Incorrect' });
 });
 
@@ -3610,7 +3612,8 @@ app.get('/indices-api/question', (req, res) => {
 app.post('/indices-api/check', express.json(), (req, res) => {
   const { type, answerExp, answerNum, answerDen } = req.body;
   // Accept both `userAnswer` (sent by warmup client) and `answer` (original field name)
-  const userAnswer = (req.body.userAnswer || req.body.answer || '').replace(/\s+/g, '').replace(/−/g, '-');
+  const rawAns = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
+  const userAnswer = String(rawAns || '').replace(/\s+/g, '').replace(/−/g, '-');
 
   let correct = false;
   let display = '';
@@ -3759,8 +3762,9 @@ app.get('/sequences-api/question', (req, res) => {
  * POST /sequences-api/check
  */
 app.post('/sequences-api/check', express.json(), (req, res) => {
-  const { type, answer: rawAns } = req.body;
-  const userStr = (rawAns || '').replace(/\s+/g, '').replace(/−/g, '-');
+  const { type } = req.body;
+  const rawAns = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
+  const userStr = String(rawAns || '').replace(/\s+/g, '').replace(/−/g, '-');
   let correct = false;
   let display = '';
 
@@ -3886,7 +3890,8 @@ app.get('/ratio-api/question', (req, res) => {
  */
 app.post('/ratio-api/check', express.json(), (req, res) => {
   const { type } = req.body;
-  const userStr = (req.body.answer || '').replace(/\s+/g, '').replace(/−/g, '-');
+  const rawAns = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
+  const userStr = String(rawAns || '').replace(/\s+/g, '').replace(/−/g, '-');
   let correct = false;
   let display = '';
 
@@ -4106,8 +4111,8 @@ app.get('/percent-api/question', (req, res) => {
  */
 app.post('/percent-api/check', express.json(), (req, res) => {
   const { type, tier, answer: expected, expectsPercent } = req.body;
-  const raw = String(req.body.userAnswer || '');
-  const userStr = raw.replace(/\s+/g, '').replace(/[%₹$,]/g, '').replace(/−/g, '-');
+  const raw = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
+  const userStr = String(raw || '').replace(/\s+/g, '').replace(/[%₹$,]/g, '').replace(/−/g, '-');
   const userNum = parseFloat(userStr);
   let correct = false;
   if (!isNaN(userNum) && expected !== undefined && expected !== null) {
@@ -6287,7 +6292,8 @@ app.get('/rounding-api/question', (req, res) => {
 });
 
 app.post('/rounding-api/check', express.json(), (req, res) => {
-  const ua = parseFloat((req.body.userAnswer || '').replace(/\s/g, ''));
+  const raw = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
+  const ua = parseFloat(String(raw || '').replace(/\s/g, ''));
   const correct = !isNaN(ua) && Math.abs(ua - req.body.answer) < 0.005;
   res.json({ correct, display: req.body.display, message: correct ? 'Correct!' : 'Incorrect' });
 });
@@ -6862,7 +6868,8 @@ app.get('/squaring-api/question', (req, res) => {
 
 app.post('/squaring-api/check', express.json(), (req, res) => {
   const { a, b, aSq, bSq, twoAB, answer, display } = req.body;
-  const ua = (req.body.userAnswer || '').toString().replace(/\s/g, '');
+  const raw = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
+  const ua = String(raw || '').replace(/\s/g, '');
   // Accept pipe-separated "aSq|bSq|twoAB|final" or just the final answer
   const parts = ua.split('|').map(s => parseInt(s.trim()));
 
@@ -7117,7 +7124,8 @@ app.get('/lineareq-api/question', (req, res) => {
 
 app.post('/lineareq-api/check', express.json(), (req, res) => {
   const { answer, display } = req.body;
-  const userStr = (req.body.userAnswer || '').trim();
+  const raw = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
+  const userStr = String(raw || '').trim();
   const userNum = parseFloat(userStr);
   const correct = !isNaN(userNum) && Math.abs(userNum - answer) < 0.1;
   res.json({ correct, display, message: correct ? 'Correct!' : 'Incorrect' });
@@ -7168,7 +7176,8 @@ app.get('/decimals-api/question', (req, res) => {
 
 app.post('/decimals-api/check', express.json(), (req, res) => {
   const { answer, display } = req.body;
-  const userStr = (req.body.userAnswer || '').trim();
+  const raw = req.body.userAnswer !== undefined ? req.body.userAnswer : req.body.answer;
+  const userStr = String(raw || '').trim();
   const userNum = parseFloat(userStr);
   const correct = !isNaN(userNum) && Math.abs(userNum - answer) < 0.01;
   res.json({ correct, display, message: correct ? 'Correct!' : 'Incorrect' });
