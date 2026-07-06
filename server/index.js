@@ -1084,10 +1084,8 @@ const PREREQ_GRAPH = JSON.parse(
 );
 app.get('/api/prerequisites/:topic', (req, res) => {
   const { topic } = req.params;
-  const prereqTopic = Object.prototype.hasOwnProperty.call(PREREQ_GRAPH, topic)
-    ? PREREQ_GRAPH[topic]
-    : null;
-  res.json({ prereqTopic });
+  const prereqTopics = PREREQ_GRAPH[topic] || [];
+  res.json({ topic, prereqTopics });
 });
 
 
@@ -8931,16 +8929,7 @@ app.post('/diffeq-api/check', express.json(), (req, res) => {
   res.json({ correct, display, message: correct ? 'Correct!' : 'Incorrect' });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PREREQUISITE ENDPOINT (Feature P v0.2)
-// ═══════════════════════════════════════════════════════════════════════════
-const prerequisitesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'prerequisites.json'), 'utf8'));
 
-app.get('/api/prerequisites/:topic', (req, res) => {
-  const { topic } = req.params;
-  const prereqTopics = prerequisitesData[topic] || [];
-  res.json({ topic, prereqTopics });
-});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // /graph — Prerequisite DAG visualisation
