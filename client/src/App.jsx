@@ -44689,53 +44689,51 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     }
 
     // resolvePrerequisiteChain(startTopic)
-    //   Hierarchical Prerequisite Traversal.
-    //   Resolves the prerequisite chain to find the deepest unseen prerequisite.
+    //   Hierarchical Prerequisite Traversal (Level-by-Level / BFS).
+    //   Finds the first unseen prerequisite by scanning level-by-level (direct parents first,
+    //   then grandparents, etc.) to ensure students review all sibling dependencies
+    //   before traversing deeper.
     //   Uses client-side caching to avoid repetitive API requests.
-    //   Implements cycle detection (via transient Set) and max-depth guards (depth <= 10).
+    //   Implements cycle detection and max-depth guards (depth <= 10).
     const resolvePrerequisiteChain = async (startTopic) => {
-      let currentTopic = startTopic
-      const visitedThisLookup = new Set()
+      let queue = [ { topic: startTopic, path: [startTopic] } ]
+      let visitedNodes = new Set([startTopic])
+      let nextQueue = []
       let depth = 0
 
-      while (currentTopic && depth < 10) {
-        // Cycle detection safeguard
-        if (visitedThisLookup.has(currentTopic)) {
-          console.warn(`[Hierarchical Traversal] Prerequisite cycle detected at: ${currentTopic}`)
-          break
-        }
-        visitedThisLookup.add(currentTopic)
-
-        // Resolve prerequisite of currentTopic (with cache lookup)
-        let nextTopic = null
-        if (prereqCacheRef.current.has(currentTopic)) {
-          nextTopic = prereqCacheRef.current.get(currentTopic)
-        } else {
-          try {
-            const res = await fetch(`${API}/api/prerequisites/${currentTopic}`)
-            if (res.ok) {
-              const { prereqTopic } = await res.json()
-              nextTopic = prereqTopic || null
-              prereqCacheRef.current.set(currentTopic, nextTopic)
+      while (queue.length > 0 && depth < 10) {
+        for (const item of queue) {
+          const current = item.topic
+          
+          let prereqs = []
+          if (prereqCacheRef.current.has(current)) {
+            prereqs = prereqCacheRef.current.get(current)
+          } else {
+            try {
+              const res = await fetch(`${API}/api/prerequisites/${current}`)
+              if (res.ok) {
+                const data = await res.json()
+                prereqs = data.prereqTopics || []
+                prereqCacheRef.current.set(current, prereqs)
+              }
+            } catch (e) {
+              console.error(`[Hierarchical Traversal] Failed to fetch prereq for ${current}:`, e)
             }
-          } catch (e) {
-            console.error(`[Hierarchical Traversal] Failed to fetch prereq for ${currentTopic}:`, e)
-            break
+          }
+
+          for (const p of prereqs) {
+            if (!visitedNodes.has(p)) {
+              if (!sessionWarmupTopicsRef.current.has(p)) {
+                return p
+              }
+              visitedNodes.add(p)
+              nextQueue.push({ topic: p, path: [...item.path, p] })
+            }
           }
         }
 
-        // If no prerequisite topic exists, we have reached the end of the hierarchy chain
-        if (!nextTopic) {
-          break
-        }
-
-        // If the prerequisite has not been shown in this session, it's our candidate!
-        if (!sessionWarmupTopicsRef.current.has(nextTopic)) {
-          return nextTopic
-        }
-
-        // If it was already shown, traverse up to the next link in the hierarchy chain
-        currentTopic = nextTopic
+        queue = nextQueue
+        nextQueue = []
         depth++
       }
 
