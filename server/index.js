@@ -8938,8 +8938,8 @@ const prerequisitesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'prere
 
 app.get('/api/prerequisites/:topic', (req, res) => {
   const { topic } = req.params;
-  const prereqTopic = prerequisitesData[topic] || null;
-  res.json({ topic, prereqTopic });
+  const prereqTopics = prerequisitesData[topic] || [];
+  res.json({ topic, prereqTopics });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
