@@ -44428,7 +44428,49 @@ const WARMUP_QUESTIONS_V01 = [
 ]
 // ─────────────────────────────────────────────────────────────────────────────
 
+const getTopicDisplayName = (apiPath) => {
+  if (!apiPath) return 'Basics'
+  const customNames = {
+    'trig-api': 'Trigonometry',
+    'pythag-api': 'Pythagoras Theorem',
+    'lineareq-api': 'Linear Equations',
+    'multiply-api': 'Multiplication',
+    'addition-api': 'Addition & Subtraction',
+    'decimals-api': 'Decimals & Fractions',
+    'stdform-api': 'Standard Form',
+    'quadratic-api': 'Quadratic Equations',
+    'diff-api': 'Differentiation',
+    'integ-api': 'Integration',
+    'limits-api': 'Limits & Functions',
+    'permcomb-api': 'Permutations & Combinations',
+    'primefactor-api': 'Prime Factorisation',
+    'sqrt-api': 'Square Roots',
+    'hcflcm-api': 'HCF & LCM',
+    'angles-api': 'Angles & Lines',
+    'triangles-api': 'Triangles',
+    'congruence-api': 'Triangle Congruence',
+    'similarity-api': 'Triangle Similarity',
+    'circle-api': 'Circle Theorems',
+    'bearings-api': 'Bearings',
+    'coordgeom-api': 'Coordinate Geometry',
+    'transform-api': 'Transformations',
+    'mensur-api': 'Mensuration',
+    'vectors-api': 'Vectors',
+    'matrix-api': 'Matrices',
+    'prob-api': 'Probability',
+    'stats-api': 'Statistics',
+    'ineq-api': 'Inequalities',
+  }
+  if (customNames[apiPath]) return customNames[apiPath]
+  return apiPath
+    .replace('-api', '')
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, answerField }) {
+
   return function GeneratedQuizApp({ onBack }) {
     const diffs = Object.keys(diffLabels)
     const [difficulty, setDifficulty] = useState(diffs[0])
@@ -44769,11 +44811,15 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       <QuizLayout title={title} subtitle={subtitle} onBack={onBack} timer={started && !finished ? timer : null}>
         {/* ── Feature P v0.2: Prerequisite Warmup Overlay (topic-aware) ──────────── */}
         {warmupActive && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-            <div style={{ background: 'var(--clr-card, #1e2030)', borderRadius: '16px', padding: '32px 28px', maxWidth: '440px', width: '90%', boxShadow: '0 8px 40px rgba(0,0,0,0.6)', border: '1px solid var(--clr-border, #3a3d4a)' }}>
+          <div className="warmup-overlay-backdrop">
+            <div className="warmup-overlay-card">
               <div style={{ fontSize: '2.2rem', textAlign: 'center', marginBottom: '6px' }}>🧠</div>
               <p style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.1rem', margin: '0 0 4px' }}>Quick Warmup!</p>
-              <p style={{ textAlign: 'center', fontSize: '0.83rem', color: 'var(--clr-dim, #888)', margin: '0 0 20px' }}>Let&#39;s refresh some basics — 3 quick ungraded questions.</p>
+              <p style={{ textAlign: 'center', fontSize: '0.83rem', color: 'var(--clr-dim, #888)', margin: '0 0 20px' }}>
+                {warmupPrereqTopic 
+                  ? `Let's refresh some basics in ${getTopicDisplayName(warmupPrereqTopic)} — 3 quick ungraded questions.`
+                  : "Let's refresh some basics — 3 quick ungraded questions."}
+              </p>
               {warmupLoading
                 ? <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--clr-dim, #888)', fontSize: '0.9rem' }}>Loading warmup questions…</div>
                 : <>
@@ -44789,6 +44835,9 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
                     </div>
                   </>
               }
+              <button className="warmup-skip-btn" onClick={completeWarmup}>
+                Skip Warmup & Return to Quiz
+              </button>
               <p style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--clr-dim, #888)', marginTop: '14px', marginBottom: 0 }}>This warmup is ungraded — your quiz score and progress are preserved.</p>
             </div>
           </div>
