@@ -44755,21 +44755,35 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       try {
         const resolvedTopic = await resolvePrerequisiteChain(apiPath)
         if (resolvedTopic) {
-          // Fetch up to 10 candidates sequentially and deduplicate by prompt
-          // to handle servers with small question pools (e.g. pythag Tier 0/1)
+          // Fetch up to 10 candidates sequentially and deduplicate.
+          // Schema-agnostic: accept any non-null question object regardless
+          // of whether it has a 'prompt' field (e.g. polymul-api, indices-api
+          // each use different response shapes). Use JSON.stringify for dedup key.
           const seen = new Set()
           const unique = []
           for (let attempt = 0; unique.length < 3 && attempt < 10; attempt++) {
             const ts2 = Date.now()
             const q = await fetch(`${API}/${resolvedTopic}/question?q=${attempt * 3}&_=${ts2}`).then(r => r.json())
-            if (q && q.prompt && !seen.has(q.prompt)) {
-              seen.add(q.prompt)
-              unique.push(q)
+            if (q && typeof q === 'object') {
+              const key = JSON.stringify(q)
+              if (!seen.has(key)) {
+                seen.add(key)
+                unique.push(q)
+              }
             }
           }
-          const fetches = unique.length === 3 ? unique : [...unique, ...WARMUP_QUESTIONS_V01].slice(0, 3)
-          setWarmupQuestions(fetches)
-          setWarmupPrereqTopic(resolvedTopic)
+          if (unique.length === 3) {
+            // All 3 questions came from the live API — use the API checker
+            setWarmupQuestions(unique)
+            setWarmupPrereqTopic(resolvedTopic)
+          } else {
+            // Not enough questions from this topic's API — pad with local fallback
+            // questions and null out the topic so the local checker is used.
+            // This prevents sending a simple addition question to e.g. /polymul-api/check.
+            const fetches = [...unique, ...WARMUP_QUESTIONS_V01].slice(0, 3)
+            setWarmupQuestions(fetches)
+            setWarmupPrereqTopic(null)
+          }
         } else {
           setWarmupQuestions(WARMUP_QUESTIONS_V01)
           setWarmupPrereqTopic(null)
@@ -44804,7 +44818,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
           )
         } catch {
           setWarmupRevealed(true)
-          setWarmupFeedback('Answer submitted!')
+          setWarmupFeedback('❌ Could not verify answer — try again')
         }
       } else {
         // v0.1 fallback: local numeric compare
