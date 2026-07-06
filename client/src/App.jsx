@@ -44527,6 +44527,9 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     // sessionWarmupTopicsRef: tracks which prereq topics have already been
     // shown as warmup during this quiz session, preventing repeat warmups.
     const sessionWarmupTopicsRef = useRef(new Set())
+    // prereqCacheRef: caches resolved topic prerequisites to prevent redundant
+    // network roundtrips during hierarchical lookup.
+    const prereqCacheRef = useRef(new Map())
     // ──────────────────────────────────────────────────────────────────────────
 
     const effectiveDifficulty = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -44685,10 +44688,63 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       if (next.length >= 4 && wrongs >= 3) triggerWarmup()
     }
 
+    // resolvePrerequisiteChain(startTopic)
+    //   Hierarchical Prerequisite Traversal.
+    //   Resolves the prerequisite chain to find the deepest unseen prerequisite.
+    //   Uses client-side caching to avoid repetitive API requests.
+    //   Implements cycle detection (via transient Set) and max-depth guards (depth <= 10).
+    const resolvePrerequisiteChain = async (startTopic) => {
+      let currentTopic = startTopic
+      const visitedThisLookup = new Set()
+      let depth = 0
+
+      while (currentTopic && depth < 10) {
+        // Cycle detection safeguard
+        if (visitedThisLookup.has(currentTopic)) {
+          console.warn(`[Hierarchical Traversal] Prerequisite cycle detected at: ${currentTopic}`)
+          break
+        }
+        visitedThisLookup.add(currentTopic)
+
+        // Resolve prerequisite of currentTopic (with cache lookup)
+        let nextTopic = null
+        if (prereqCacheRef.current.has(currentTopic)) {
+          nextTopic = prereqCacheRef.current.get(currentTopic)
+        } else {
+          try {
+            const res = await fetch(`${API}/api/prerequisites/${currentTopic}`)
+            if (res.ok) {
+              const { prereqTopic } = await res.json()
+              nextTopic = prereqTopic || null
+              prereqCacheRef.current.set(currentTopic, nextTopic)
+            }
+          } catch (e) {
+            console.error(`[Hierarchical Traversal] Failed to fetch prereq for ${currentTopic}:`, e)
+            break
+          }
+        }
+
+        // If no prerequisite topic exists, we have reached the end of the hierarchy chain
+        if (!nextTopic) {
+          break
+        }
+
+        // If the prerequisite has not been shown in this session, it's our candidate!
+        if (!sessionWarmupTopicsRef.current.has(nextTopic)) {
+          return nextTopic
+        }
+
+        // If it was already shown, traverse up to the next link in the hierarchy chain
+        currentTopic = nextTopic
+        depth++
+      }
+
+      return null
+    }
+
     // triggerWarmup()
     //   Snapshots the current quiz state and activates the warmup overlay.
-    //   Feature P v0.2: fetches /api/prerequisites/:apiPath to resolve the
-    //   prerequisite topic, then fetches 3 easy questions from that topic.
+    //   Feature P v0.2.5: Hierarchical lookup of prerequisite topic.
     //   Falls back to WARMUP_QUESTIONS_V01 on any error or missing prereq.
     const triggerWarmup = async () => {
       setFrozenQuizState({ questionNumber, score, results })
@@ -44699,16 +44755,15 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       setWarmupRevealed(false)
       setWarmupLoading(true)
       try {
-        const prereqRes = await fetch(`${API}/api/prerequisites/${apiPath}`)
-        const { prereqTopic } = await prereqRes.json()
-        if (prereqTopic && !sessionWarmupTopicsRef.current.has(prereqTopic)) {
+        const resolvedTopic = await resolvePrerequisiteChain(apiPath)
+        if (resolvedTopic) {
           // Fetch up to 10 candidates sequentially and deduplicate by prompt
           // to handle servers with small question pools (e.g. pythag Tier 0/1)
           const seen = new Set()
           const unique = []
           for (let attempt = 0; unique.length < 3 && attempt < 10; attempt++) {
             const ts2 = Date.now()
-            const q = await fetch(`${API}/${prereqTopic}/question?q=${attempt * 3}&_=${ts2}`).then(r => r.json())
+            const q = await fetch(`${API}/${resolvedTopic}/question?q=${attempt * 3}&_=${ts2}`).then(r => r.json())
             if (q && q.prompt && !seen.has(q.prompt)) {
               seen.add(q.prompt)
               unique.push(q)
@@ -44716,7 +44771,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
           }
           const fetches = unique.length === 3 ? unique : [...unique, ...WARMUP_QUESTIONS_V01].slice(0, 3)
           setWarmupQuestions(fetches)
-          setWarmupPrereqTopic(prereqTopic)
+          setWarmupPrereqTopic(resolvedTopic)
         } else {
           setWarmupQuestions(WARMUP_QUESTIONS_V01)
           setWarmupPrereqTopic(null)
