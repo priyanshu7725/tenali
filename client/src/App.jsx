@@ -44564,6 +44564,12 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     // prereqCacheRef: caches resolved topic prerequisites to prevent redundant
     // network roundtrips during hierarchical lookup.
     const prereqCacheRef = useRef(new Map())
+    // Feature P v0.3: Student-Controlled Prerequisite Picker State
+    const [struggleCount, setStruggleCount] = useState(0) // 0=never, 1=1st, 2=2nd, 3+=learn-rec
+    const [pickerActive, setPickerActive] = useState(false)
+    const [pickerTopics, setPickerTopics] = useState([])
+    const [learnRecActive, setLearnRecActive] = useState(false)
+    const [learnRecTopics, setLearnRecTopics] = useState([])
     // ──────────────────────────────────────────────────────────────────────────
 
     const effectiveDifficulty = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -44611,6 +44617,12 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       setWarmupPrereqTopic(null)
       setWarmupLoading(false)
       sessionWarmupTopicsRef.current = new Set()  // fresh session, fresh warmups
+      // Feature P v0.3 resets
+      setStruggleCount(0)
+      setPickerActive(false)
+      setPickerTopics([])
+      setLearnRecActive(false)
+      setLearnRecTopics([])
     }
     useEffect(() => { if (started && !finished && questionNumber > 0) loadQuestion() }, [started, questionNumber])
     const advance = () => {
@@ -44719,68 +44731,86 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       const next = [...historyWindowRef.current, correct].slice(-4)
       historyWindowRef.current = next
       const wrongs = next.filter(v => !v).length
-      if (next.length >= 4 && wrongs >= 3) triggerWarmup()
+      if (next.length >= 4 && wrongs >= 3) {
+        historyWindowRef.current = []
+        cooldownRef.current = 4
+        
+        const nextStruggleCount = struggleCount + 1
+        setStruggleCount(nextStruggleCount)
+        
+        if (nextStruggleCount === 1) triggerAutoWarmup()
+        else if (nextStruggleCount === 2) triggerPicker()
+        else triggerLearnRec()
+      }
     }
 
-    // resolvePrerequisiteChain(startTopic)
-    //   Hierarchical Prerequisite Traversal (Level-by-Level / BFS).
-    //   Finds the first unseen prerequisite by scanning level-by-level (direct parents first,
-    //   then grandparents, etc.) to ensure students review all sibling dependencies
-    //   before traversing deeper.
-    //   Uses client-side caching to avoid repetitive API requests.
-    //   Implements cycle detection and max-depth guards (depth <= 10).
-    const resolvePrerequisiteChain = async (startTopic) => {
-      let queue = [ { topic: startTopic, path: [startTopic] } ]
-      let visitedNodes = new Set([startTopic])
-      let nextQueue = []
-      let depth = 0
+    const getRecommendedPrerequisite = (prereqs) =>
+      prereqs.find(t => WARMUP_SUPPORTED_TOPICS.has(t)) ?? null
 
-      while (queue.length > 0 && depth < 10) {
-        for (const item of queue) {
-          const current = item.topic
-          
-          let prereqs = []
-          if (prereqCacheRef.current.has(current)) {
-            prereqs = prereqCacheRef.current.get(current)
-          } else {
-            try {
-              const res = await fetch(`${API}/api/prerequisites/${current}`)
-              if (res.ok) {
-                const data = await res.json()
-                prereqs = data.prereqTopics || []
-                prereqCacheRef.current.set(current, prereqs)
-              }
-            } catch (e) {
-              console.error(`[Hierarchical Traversal] Failed to fetch prereq for ${current}:`, e)
-            }
-          }
-
-          for (const p of prereqs) {
-            if (!visitedNodes.has(p)) {
-              if (!sessionWarmupTopicsRef.current.has(p)) {
-                if (WARMUP_SUPPORTED_TOPICS.has(p)) {
-                  return p
-                }
-              }
-              visitedNodes.add(p)
-              nextQueue.push({ topic: p, path: [...item.path, p] })
-            }
-          }
+    const fetchPrereqs = async (topic) => {
+      if (prereqCacheRef.current.has(topic)) {
+        return prereqCacheRef.current.get(topic)
+      }
+      try {
+        const res = await fetch(`${API}/api/prerequisites/${topic}`)
+        if (res.ok) {
+          const data = await res.json()
+          const prereqs = data.prereqTopics || []
+          prereqCacheRef.current.set(topic, prereqs)
+          return prereqs
         }
+      } catch (e) {
+        console.error(`Failed to fetch prereqs for ${topic}:`, e)
+      }
+      return []
+    }
 
-        queue = nextQueue
-        nextQueue = []
-        depth++
+    const triggerAutoWarmup = async () => {
+      setWarmupLoading(true)
+      const prereqs = await fetchPrereqs(apiPath)
+      
+      if (prereqs.length === 0) {
+        setWarmupLoading(false)
+        triggerLearnRec(prereqs)
+        return
       }
 
-      return null
+      const recommended = getRecommendedPrerequisite(prereqs)
+      if (recommended) {
+        await startWarmupForTopic(recommended)
+      } else {
+        setWarmupLoading(false)
+        triggerPicker(prereqs)
+      }
     }
 
-    // triggerWarmup()
-    //   Snapshots the current quiz state and activates the warmup overlay.
-    //   Feature P v0.2.5: Hierarchical lookup of prerequisite topic.
-    //   Falls back to WARMUP_QUESTIONS_V01 on any error or missing prereq.
-    const triggerWarmup = async () => {
+    const triggerPicker = async (preloadedPrereqs = null) => {
+      const prereqs = preloadedPrereqs || await fetchPrereqs(apiPath)
+      const topics = prereqs.slice(0, 3).map(t => ({
+        topic: t,
+        displayName: getTopicDisplayName(t),
+        completed: sessionWarmupTopicsRef.current.has(t),
+        supported: WARMUP_SUPPORTED_TOPICS.has(t),
+        recommended: t === getRecommendedPrerequisite(prereqs)
+      }))
+
+      const actionable = topics.filter(t => t.supported || t.completed)
+      if (actionable.length === 0) {
+        triggerLearnRec(prereqs)
+        return
+      }
+
+      setPickerTopics(topics)
+      setPickerActive(true)
+    }
+
+    const triggerLearnRec = async (preloadedPrereqs = null) => {
+      const prereqs = preloadedPrereqs || await fetchPrereqs(apiPath)
+      setLearnRecTopics(prereqs.map(getTopicDisplayName))
+      setLearnRecActive(true)
+    }
+
+    const startWarmupForTopic = async (topic) => {
       setFrozenQuizState({ questionNumber, score, results })
       setWarmupActive(true)
       setWarmupStep(0)
@@ -44789,48 +44819,32 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       setWarmupRevealed(false)
       setWarmupLoading(true)
       try {
-        const resolvedTopic = await resolvePrerequisiteChain(apiPath)
-        if (resolvedTopic) {
-          // Fetch up to 10 candidates sequentially and deduplicate.
-          // Schema-agnostic: accept any non-null question object regardless
-          // of whether it has a 'prompt' field (e.g. polymul-api, indices-api
-          // each use different response shapes). Use JSON.stringify for dedup key.
-          const seen = new Set()
-          const unique = []
-          for (let attempt = 0; unique.length < 3 && attempt < 10; attempt++) {
-            const ts2 = Date.now()
-            const q = await fetch(`${API}/${resolvedTopic}/question?q=${attempt * 3}&_=${ts2}`).then(r => r.json())
-            if (q && typeof q === 'object') {
-              const key = JSON.stringify(q)
-              if (!seen.has(key)) {
-                seen.add(key)
-                unique.push(q)
-              }
+        const seen = new Set()
+        const unique = []
+        for (let attempt = 0; unique.length < 3 && attempt < 10; attempt++) {
+          const ts2 = Date.now()
+          const q = await fetch(`${API}/${topic}/question?q=${attempt * 3}&_=${ts2}`).then(r => r.json())
+          if (q && typeof q === 'object') {
+            const key = JSON.stringify(q)
+            if (!seen.has(key)) {
+              seen.add(key)
+              unique.push(q)
             }
           }
-          if (unique.length > 0) {
-            // Tag real API questions so the checker knows to call /check for them.
-            // Synthesise a `prompt` field for questions that don't have one
-            // (e.g. polymul-api uses p1Display/p2Display, fractionadd-api uses n1/d1/n2/d2)
-            const taggedApi = unique.map(q => ({
-              ...q,
-              prompt: getWarmupPrompt(q),
-              _source: 'api',
-              _topic: resolvedTopic,
-            }))
-            // Pad with local fallback questions tagged as local
-            const taggedLocal = WARMUP_QUESTIONS_V01.map(q => ({ ...q, _source: 'local' }))
-            const fetches = [...taggedApi, ...taggedLocal].slice(0, 3)
-            setWarmupQuestions(fetches)
-            // Keep resolvedTopic for sessionWarmupTopicsRef tracking in completeWarmup
-            setWarmupPrereqTopic(resolvedTopic)
-          } else {
-            // API returned nothing — pure local fallback
-            setWarmupQuestions(WARMUP_QUESTIONS_V01.map(q => ({ ...q, _source: 'local' })))
-            setWarmupPrereqTopic(null)
-          }
+        }
+        if (unique.length > 0) {
+          const taggedApi = unique.map(q => ({
+            ...q,
+            prompt: getWarmupPrompt(q),
+            _source: 'api',
+            _topic: topic,
+          }))
+          const taggedLocal = WARMUP_QUESTIONS_V01.map(q => ({ ...q, _source: 'local' }))
+          const fetches = [...taggedApi, ...taggedLocal].slice(0, 3)
+          setWarmupQuestions(fetches)
+          setWarmupPrereqTopic(topic)
         } else {
-          setWarmupQuestions(WARMUP_QUESTIONS_V01)
+          setWarmupQuestions(WARMUP_QUESTIONS_V01.map(q => ({ ...q, _source: 'local' })))
           setWarmupPrereqTopic(null)
         }
       } catch {
@@ -44924,7 +44938,81 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
 
     return (
       <QuizLayout title={title} subtitle={subtitle} onBack={onBack} timer={started && !finished ? timer : null}>
-        {/* ── Feature P v0.2: Prerequisite Warmup Overlay (topic-aware) ──────────── */}
+        {/* ── Feature P v0.3: Prerequisite Overlays ──────────── */}
+        {pickerActive && (
+          <div className="warmup-overlay-backdrop">
+            <div className="warmup-overlay-card">
+              <div style={{ fontSize: '2.2rem', textAlign: 'center', marginBottom: '6px' }}>🧠</div>
+              <p style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.1rem', margin: '0 0 4px' }}>Still finding this tricky?</p>
+              <p style={{ textAlign: 'center', fontSize: '0.83rem', color: 'var(--clr-dim, #888)', margin: '0 0 20px' }}>
+                Choose a prerequisite topic to do a quick warmup:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+                {pickerTopics.map(pt => {
+                  const actionEnabled = pt.supported || pt.completed
+                  return (
+                    <div key={pt.topic} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '12px 16px', background: 'var(--bg-card, #f8f9fa)',
+                      borderRadius: '8px', border: '1px solid var(--border-color, #eee)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.2rem' }}>
+                          {pt.completed ? '✓' : !pt.supported ? '⚠' : pt.recommended ? '⭐' : ' '}
+                        </span>
+                        <span style={{ 
+                          fontWeight: 500,
+                          color: !pt.supported && !pt.completed ? 'var(--clr-dim, #888)' : 'inherit'
+                        }}>
+                          {pt.displayName} {pt.recommended && <span style={{ fontSize: '0.75rem', color: '#ff9800', marginLeft: '4px' }}>(Recommended)</span>}
+                        </span>
+                      </div>
+                      <button 
+                        onClick={() => { setPickerActive(false); startWarmupForTopic(pt.topic) }}
+                        disabled={!actionEnabled}
+                        style={{
+                          padding: '6px 12px', fontSize: '0.85rem',
+                          background: actionEnabled ? 'var(--clr-primary, #4caf50)' : 'var(--border-color, #eee)',
+                          color: actionEnabled ? 'white' : 'var(--clr-dim, #888)',
+                          border: 'none', borderRadius: '4px', cursor: actionEnabled ? 'pointer' : 'not-allowed'
+                        }}
+                      >
+                        {actionEnabled ? 'Start Warmup' : 'Warmup unavailable'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+              <button className="warmup-skip-btn" onClick={() => { setPickerActive(false); completeWarmup() }}>
+                Continue Quiz
+              </button>
+            </div>
+          </div>
+        )}
+
+        {learnRecActive && (
+          <div className="warmup-overlay-backdrop">
+            <div className="warmup-overlay-card">
+              <div style={{ fontSize: '2.2rem', textAlign: 'center', marginBottom: '6px' }}>📚</div>
+              <p style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.1rem', margin: '0 0 16px' }}>Taking more time on the foundations will help.</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--clr-text, #333)', marginBottom: '12px', lineHeight: 1.5 }}>
+                You've already tried the available prerequisite warmups. Before continuing, it's worth revisiting these concepts:
+              </p>
+              <ul style={{ paddingLeft: '24px', marginBottom: '16px', color: 'var(--clr-text, #333)', lineHeight: 1.6 }}>
+                {learnRecTopics.map(name => <li key={name}><strong>{name}</strong></li>)}
+              </ul>
+              <p style={{ fontSize: '0.9rem', color: 'var(--clr-dim, #888)', marginBottom: '24px', lineHeight: 1.5 }}>
+                These topics form the foundation for <strong>{title}</strong>.
+              </p>
+              <div className="button-row" style={{ justifyContent: 'center' }}>
+                <button onClick={() => { setLearnRecActive(false); completeWarmup() }}>
+                  Continue Quiz
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {warmupActive && (
           <div className="warmup-overlay-backdrop">
             <div className="warmup-overlay-card">
