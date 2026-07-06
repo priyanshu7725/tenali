@@ -44656,11 +44656,19 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
         const prereqRes = await fetch(`${API}/api/prerequisites/${apiPath}`)
         const { prereqTopic } = await prereqRes.json()
         if (prereqTopic) {
-          const fetches = await Promise.all([
-            fetch(`${API}/${prereqTopic}/question`).then(r => r.json()),
-            fetch(`${API}/${prereqTopic}/question`).then(r => r.json()),
-            fetch(`${API}/${prereqTopic}/question`).then(r => r.json()),
-          ])
+          // Fetch up to 10 candidates sequentially and deduplicate by prompt
+          // to handle servers with small question pools (e.g. pythag Tier 0/1)
+          const seen = new Set()
+          const unique = []
+          for (let attempt = 0; unique.length < 3 && attempt < 10; attempt++) {
+            const ts2 = Date.now()
+            const q = await fetch(`${API}/${prereqTopic}/question?q=${attempt * 3}&_=${ts2}`).then(r => r.json())
+            if (q && q.prompt && !seen.has(q.prompt)) {
+              seen.add(q.prompt)
+              unique.push(q)
+            }
+          }
+          const fetches = unique.length === 3 ? unique : [...unique, ...WARMUP_QUESTIONS_V01].slice(0, 3)
           setWarmupQuestions(fetches)
           setWarmupPrereqTopic(prereqTopic)
         } else {

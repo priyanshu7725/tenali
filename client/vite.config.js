@@ -65,6 +65,9 @@ export default defineConfig({
       '/funceval-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Linear equations quiz API
       '/lineq-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/lineareq-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/decimals-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/permcomb-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Basic arithmetic quiz API
       '/basicarith-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Fraction addition quiz API
