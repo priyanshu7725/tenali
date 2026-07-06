@@ -1240,9 +1240,10 @@ app.get('/addition-api/question', (req, res) => {
  * }
  */
 app.post('/addition-api/check', (req, res) => {
-  const { a, b, answer } = req.body || {};
+  const { a, b } = req.body || {};
+  const userAnswer = req.body.userAnswer || req.body.answer;
   const correctAnswer = Number(a) + Number(b);
-  const correct = Number(answer) === correctAnswer;
+  const correct = Number(userAnswer) === correctAnswer;
   res.json({ correct, correctAnswer, message: correct ? 'Correct' : 'Incorrect' });
 });
 
@@ -1480,11 +1481,12 @@ app.get('/sqrt-api/question', (req, res) => {
  * }
  */
 app.post('/sqrt-api/check', (req, res) => {
-  const { q, answer } = req.body || {};
+  const { q } = req.body || {};
+  const userAnswer = req.body.userAnswer || req.body.answer;
   const sqrt = Math.sqrt(Number(q));
   const floorAnswer = Math.floor(sqrt);
   const ceilAnswer = Math.ceil(sqrt);
-  const numericAnswer = Number(answer);
+  const numericAnswer = Number(userAnswer);
   // Accept either floor or ceiling as correct
   const correct = numericAnswer === floorAnswer || numericAnswer === ceilAnswer;
 
@@ -1650,9 +1652,10 @@ app.get('/multiply-api/question', (req, res) => {
  * }
  */
 app.post('/multiply-api/check', (req, res) => {
-  const { table, multiplier, answer } = req.body || {};
+  const { table, multiplier } = req.body || {};
+  const userAnswer = req.body.userAnswer || req.body.answer;
   const correctAnswer = Number(table) * Number(multiplier);
-  const correct = Number(answer) === correctAnswer;
+  const correct = Number(userAnswer) === correctAnswer;
   res.json({ correct, correctAnswer, message: correct ? 'Correct' : 'Incorrect' });
 });
 

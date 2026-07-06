@@ -44469,6 +44469,18 @@ const getTopicDisplayName = (apiPath) => {
     .join(' ')
 }
 
+// WARMUP_SUPPORTED_TOPICS
+//   Topics that are compatible with the warmup overlay's single text input.
+//   Complex topics (polymul, fractionadd) require custom UI and will be skipped
+//   during prerequisite traversal, gracefully falling back to these basics.
+const WARMUP_SUPPORTED_TOPICS = new Set([
+  'indices-api',
+  'addition-api',
+  'multiply-api',
+  'basicarith-api',
+  'sqrt-api',
+])
+
 // getWarmupPrompt(q)
 //   Synthesises a human-readable prompt string from any topic's question schema.
 //   Most topics return a `prompt` field, but some (polymul, fractionadd, etc.)
@@ -44746,7 +44758,9 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
           for (const p of prereqs) {
             if (!visitedNodes.has(p)) {
               if (!sessionWarmupTopicsRef.current.has(p)) {
-                return p
+                if (WARMUP_SUPPORTED_TOPICS.has(p)) {
+                  return p
+                }
               }
               visitedNodes.add(p)
               nextQueue.push({ topic: p, path: [...item.path, p] })
