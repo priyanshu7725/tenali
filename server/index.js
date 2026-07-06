@@ -8932,6 +8932,17 @@ app.post('/diffeq-api/check', express.json(), (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// PREREQUISITE ENDPOINT (Feature P v0.2)
+// ═══════════════════════════════════════════════════════════════════════════
+const prerequisitesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'prerequisites.json'), 'utf8'));
+
+app.get('/api/prerequisites/:topic', (req, res) => {
+  const { topic } = req.params;
+  const prereqTopic = prerequisitesData[topic] || null;
+  res.json({ topic, prereqTopic });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // /graph — Prerequisite DAG visualisation
 // ═══════════════════════════════════════════════════════════════════════════
 app.get('/graph', (_req, res) => {
