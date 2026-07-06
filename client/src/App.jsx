@@ -39298,6 +39298,17 @@ function makeMCQuizApp({ title, subtitle, apiPath, diffLabels, tip, adaptiveOnly
   }
 }
 
+// ─── Feature P v0.1: Prerequisite Auto-Routing & Warmups ────────────────────
+// Hardcoded warmup questions used in v0.1 to validate the overlay and
+// state-restore mechanism without live API calls.
+// These will be replaced by dynamic prerequisite API calls in v0.2.
+const WARMUP_QUESTIONS_V01 = [
+  { prompt: 'What is 6 + 7?',  answer: 13 },
+  { prompt: 'What is 9 + 5?',  answer: 14 },
+  { prompt: 'What is 8 + 4?',  answer: 12 },
+]
+// ─────────────────────────────────────────────────────────────────────────────
+
 function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, answerField }) {
   return function GeneratedQuizApp({ onBack }) {
     const diffs = Object.keys(diffLabels)
@@ -39326,6 +39337,28 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     // Guards against double-submit and double-advance race conditions
     const submittedRef = useRef(false)
     const advancedRef = useRef(false)
+
+    // ── Feature P v0.1: Struggle Detection & Warmup State ─────────────────────
+    // frozenQuizState: snapshot taken when warmup fires (not used for restore in
+    // v0.1 since React state is never mutated during warmup, but kept as a
+    // reference for debugging and future v0.2 enhancements).
+    const [frozenQuizState, setFrozenQuizState] = useState(null)  // eslint-disable-line no-unused-vars
+    // warmupActive: controls visibility of the warmup overlay modal.
+    const [warmupActive, setWarmupActive] = useState(false)
+    // warmupStep: 0-indexed position in the 3-question warmup sequence.
+    const [warmupStep, setWarmupStep] = useState(0)
+    // warmupAnswer/Feedback/Revealed: isolated answer-flow state for the
+    // warmup overlay (never touches the main quiz answer state).
+    const [warmupAnswer, setWarmupAnswer] = useState('')
+    const [warmupFeedback, setWarmupFeedback] = useState('')
+    const [warmupRevealed, setWarmupRevealed] = useState(false)
+    // historyWindowRef: rolling array of last <=4 answer results (true=correct).
+    // Stored as a ref so handlers always read the latest value synchronously.
+    const historyWindowRef = useRef([])
+    // cooldownRef: countdown of questions before the struggle trigger re-enables.
+    // Set to 4 after warmup completes to prevent immediate re-trigger loops.
+    const cooldownRef = useRef(0)
+    // ──────────────────────────────────────────────────────────────────────────
 
     const effectiveDifficulty = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
 
@@ -39363,6 +39396,11 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       setTotalQ(t); setScore(0); setQuestionNumber(1); setResults([]); setStarted(true); setFinished(false)
       setAdaptScore(0); adaptScoreRef.current = 0
       submittedRef.current = false; advancedRef.current = false
+      // Feature P v0.1: reset all struggle-detection state on each new quiz session
+      historyWindowRef.current = []
+      cooldownRef.current = 0
+      setFrozenQuizState(null)
+      setWarmupActive(false)
     }
     useEffect(() => { if (started && !finished && questionNumber > 0) loadQuestion() }, [started, questionNumber])
     const advance = () => {
@@ -39409,6 +39447,8 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
         if (data.correct) setScore(s => s + 1)
         setFeedback(data.correct ? `Correct! ${data.display}` : `Incorrect. Answer: ${data.display}`)
         setResults(prev => [...prev, { prompt: question.prompt, userAnswer: answer.trim(), correctAnswer: data.display, correct: data.correct, time: timeTaken }])
+        // Feature P v0.1: update sliding window and check for struggle trigger
+        checkStruggle(data.correct)
         // Smooth adaptive adjustment
         if (isAdaptive) {
           setAdaptScore(prev => {
@@ -39435,6 +39475,8 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
         const explanation = data.explanation || ''
         setFeedback(`Solution: ${display}${explanation ? '\n' + explanation : ''}`)
         setResults(prev => [...prev, { prompt: question.prompt, userAnswer: '(solved)', correctAnswer: display, correct: false, time: 0 }])
+        // Feature P v0.1: using Solve = didn't know = counts as incorrect
+        checkStruggle(false)
       } catch (e) { submittedRef.current = false; console.error(`Failed to solve ${title}:`, e) }
     }
 
@@ -39445,10 +39487,85 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       setIsCorrect(false); setRevealed(true)
       setFeedback('Skipped — counted as incorrect.')
       setResults(prev => [...prev, { prompt: question.prompt, userAnswer: '(skipped)', correctAnswer: '—', correct: false, time: 0 }])
+      // Feature P v0.1: skipping = incorrect for struggle detection purposes
+      checkStruggle(false)
       if (isAdaptive) {
         setAdaptScore(prev => { const next = Math.max(0, prev - 0.35); adaptScoreRef.current = next; return next })
       }
     }
+
+    // ── Feature P v0.1: Struggle Detection & Warmup Handlers ──────────────────
+    //
+    // checkStruggle(correct)
+    //   Called after every answer submission (including solve/skip).
+    //   If in cooldown, decrements cooldown and returns without checking.
+    //   Otherwise appends `correct` to the sliding window (capped at 4).
+    //   If 3+ of the last 4 are false → fires triggerWarmup().
+    const checkStruggle = (correct) => {
+      if (cooldownRef.current > 0) {
+        cooldownRef.current -= 1
+        return
+      }
+      const next = [...historyWindowRef.current, correct].slice(-4)
+      historyWindowRef.current = next
+      const wrongs = next.filter(v => !v).length
+      if (next.length >= 4 && wrongs >= 3) triggerWarmup()
+    }
+
+    // triggerWarmup()
+    //   Snapshots the current quiz state and activates the warmup overlay.
+    //   The quiz is effectively paused — no new questions are loaded.
+    const triggerWarmup = () => {
+      setFrozenQuizState({ questionNumber, score, results })
+      setWarmupActive(true)
+      setWarmupStep(0)
+      setWarmupAnswer('')
+      setWarmupFeedback('')
+      setWarmupRevealed(false)
+    }
+
+    // handleWarmupSubmit()
+    //   Checks the student's answer against the hardcoded warmup answer.
+    //   Always shows the correct answer regardless (no penalty, educational).
+    const handleWarmupSubmit = () => {
+      if (!warmupAnswer.trim() || warmupRevealed) return
+      const expected = WARMUP_QUESTIONS_V01[warmupStep].answer
+      const isRight = Number(warmupAnswer.trim()) === expected
+      setWarmupRevealed(true)
+      setWarmupFeedback(isRight ? '✅ Correct!' : `❌ The answer is ${expected}`)
+    }
+
+    // handleWarmupNext()
+    //   Advances to the next warmup question, or calls completeWarmup()
+    //   after the 3rd question is answered.
+    const handleWarmupNext = () => {
+      if (warmupStep < 2) {
+        setWarmupStep(s => s + 1)
+        setWarmupAnswer('')
+        setWarmupFeedback('')
+        setWarmupRevealed(false)
+      } else {
+        completeWarmup()
+      }
+    }
+
+    // completeWarmup()
+    //   Closes the warmup overlay, resets the sliding window, and starts
+    //   a 4-question cooldown to prevent an immediate re-trigger.
+    //   frozenQuizState is NOT restored here — the existing React state
+    //   (questionNumber, score, results) was never mutated during warmup,
+    //   so the quiz simply resumes from where it paused.
+    const completeWarmup = () => {
+      setWarmupActive(false)
+      setWarmupStep(0)
+      setWarmupAnswer('')
+      setWarmupFeedback('')
+      setWarmupRevealed(false)
+      setFrozenQuizState(null)
+      historyWindowRef.current = []  // fresh window after warmup
+      cooldownRef.current = 4        // suppress trigger for next 4 questions
+    }
+    // ──────────────────────────────────────────────────────────────────────────
 
     const handleKeyDown = (e) => { if (e.key === 'Enter') { e.preventDefault(); if (!revealed) handleSubmit() } }
     const getPlaceholder = () => {
@@ -39461,6 +39578,28 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
 
     return (
       <QuizLayout title={title} subtitle={subtitle} onBack={onBack} timer={started && !finished ? timer : null}>
+        {/* ── Feature P v0.1: Prerequisite Warmup Overlay ───────────────────────── */}
+        {warmupActive && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div style={{ background: 'var(--clr-card, #1e2030)', borderRadius: '16px', padding: '32px 28px', maxWidth: '440px', width: '90%', boxShadow: '0 8px 40px rgba(0,0,0,0.6)', border: '1px solid var(--clr-border, #3a3d4a)' }}>
+              <div style={{ fontSize: '2.2rem', textAlign: 'center', marginBottom: '6px' }}>🧠</div>
+              <p style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.1rem', margin: '0 0 4px' }}>Quick Warmup!</p>
+              <p style={{ textAlign: 'center', fontSize: '0.83rem', color: 'var(--clr-dim, #888)', margin: '0 0 20px' }}>Let&#39;s refresh some basics — 3 quick ungraded questions.</p>
+              <div style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--clr-dim, #888)', marginBottom: '10px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Warmup Question {warmupStep + 1} of 3</div>
+              <div style={{ textAlign: 'center', fontSize: '1.2rem', fontWeight: 600, marginBottom: '18px', lineHeight: 1.5 }}>{WARMUP_QUESTIONS_V01[warmupStep].prompt}</div>
+              <input className="answer-input" type="text" value={warmupAnswer} onChange={e => { if (!warmupRevealed) setWarmupAnswer(e.target.value) }} disabled={warmupRevealed} placeholder="Type your answer" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!warmupRevealed) handleWarmupSubmit() } }} autoFocus style={{ width: '100%', marginBottom: '10px' }} />
+              {warmupFeedback && <div style={{ textAlign: 'center', marginBottom: '12px', fontWeight: 600, fontSize: '0.95rem', color: warmupFeedback.startsWith('✅') ? 'var(--clr-correct, #4caf50)' : 'var(--clr-wrong, #f44336)' }}>{warmupFeedback}</div>}
+              <div className="button-row">
+                {!warmupRevealed
+                  ? <button onClick={handleWarmupSubmit} disabled={!warmupAnswer.trim()}>Check Answer</button>
+                  : <button onClick={handleWarmupNext}>{warmupStep < 2 ? 'Next →' : '🎉 Back to Quiz!'}</button>
+                }
+              </div>
+              <p style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--clr-dim, #888)', marginTop: '14px', marginBottom: 0 }}>This warmup is ungraded — your quiz score and progress are preserved.</p>
+            </div>
+          </div>
+        )}
+        {/* ─────────────────────────────────────────────────────────────────────── */}
         {!started && !finished && <div className="welcome-box">
           <p className="welcome-text">Practice {title.toLowerCase()}!</p>
           {tip && <p style={{ fontSize: '0.85rem', color: 'var(--clr-dim)', marginBottom: '8px' }}>{tip}</p>}
