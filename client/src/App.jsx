@@ -44469,6 +44469,28 @@ const getTopicDisplayName = (apiPath) => {
     .join(' ')
 }
 
+// getWarmupPrompt(q)
+//   Synthesises a human-readable prompt string from any topic's question schema.
+//   Most topics return a `prompt` field, but some (polymul, fractionadd, etc.)
+//   use different field structures. This normalises them for the warmup overlay.
+const getWarmupPrompt = (q) => {
+  if (!q) return '…'
+  // Most topics already have a prompt
+  if (q.prompt) return q.prompt
+  // polymul-api: "Expand (2)(9x + 8)"
+  if (q.p1Display && q.p2Display) return `Expand (${q.p1Display})(${q.p2Display})`
+  // fractionadd-api: "5/9 + 6/9"
+  if (q.n1 != null && q.d1 != null && q.n2 != null && q.d2 != null) {
+    return `${q.n1}/${q.d1} ${q.op || '+'} ${q.n2}/${q.d2}`
+  }
+  // polyfactor-api with display: "Factorise: x² + 16x + 63"
+  if (q.display && q.factors) return `Factorise: ${q.display}`
+  // Generic fallback: use display or question field
+  if (q.display) return q.display
+  if (q.question) return q.question
+  return '…'
+}
+
 function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, answerField }) {
 
   return function GeneratedQuizApp({ onBack }) {
@@ -44773,8 +44795,15 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
             }
           }
           if (unique.length > 0) {
-            // Tag real API questions so the checker knows to call /check for them
-            const taggedApi = unique.map(q => ({ ...q, _source: 'api', _topic: resolvedTopic }))
+            // Tag real API questions so the checker knows to call /check for them.
+            // Synthesise a `prompt` field for questions that don't have one
+            // (e.g. polymul-api uses p1Display/p2Display, fractionadd-api uses n1/d1/n2/d2)
+            const taggedApi = unique.map(q => ({
+              ...q,
+              prompt: getWarmupPrompt(q),
+              _source: 'api',
+              _topic: resolvedTopic,
+            }))
             // Pad with local fallback questions tagged as local
             const taggedLocal = WARMUP_QUESTIONS_V01.map(q => ({ ...q, _source: 'local' }))
             const fetches = [...taggedApi, ...taggedLocal].slice(0, 3)
