@@ -44482,6 +44482,9 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     // cooldownRef: countdown of questions before the struggle trigger re-enables.
     // Set to 4 after warmup completes to prevent immediate re-trigger loops.
     const cooldownRef = useRef(0)
+    // sessionWarmupTopicsRef: tracks which prereq topics have already been
+    // shown as warmup during this quiz session, preventing repeat warmups.
+    const sessionWarmupTopicsRef = useRef(new Set())
     // ──────────────────────────────────────────────────────────────────────────
 
     const effectiveDifficulty = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -44528,6 +44531,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       setWarmupQuestions(WARMUP_QUESTIONS_V01)
       setWarmupPrereqTopic(null)
       setWarmupLoading(false)
+      sessionWarmupTopicsRef.current = new Set()  // fresh session, fresh warmups
     }
     useEffect(() => { if (started && !finished && questionNumber > 0) loadQuestion() }, [started, questionNumber])
     const advance = () => {
@@ -44655,7 +44659,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       try {
         const prereqRes = await fetch(`${API}/api/prerequisites/${apiPath}`)
         const { prereqTopic } = await prereqRes.json()
-        if (prereqTopic) {
+        if (prereqTopic && !sessionWarmupTopicsRef.current.has(prereqTopic)) {
           // Fetch up to 10 candidates sequentially and deduplicate by prompt
           // to handle servers with small question pools (e.g. pythag Tier 0/1)
           const seen = new Set()
@@ -44748,6 +44752,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
       setWarmupLoading(false)
       historyWindowRef.current = []  // fresh window after warmup
       cooldownRef.current = 4        // suppress trigger for next 4 questions
+      if (warmupPrereqTopic) sessionWarmupTopicsRef.current.add(warmupPrereqTopic)  // don't show this warmup again this session
     }
     // ──────────────────────────────────────────────────────────────────────────
 
