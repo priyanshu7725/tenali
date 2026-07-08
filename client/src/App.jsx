@@ -41688,7 +41688,7 @@ function AdditionApp({ onBack }) {
   const warmup = useWarmupIntervention({
     apiPath: 'addition-api',
     title: 'Addition',
-    started, finished, questionNumber, score, results, API
+    started, finished, questionNumber, score, results, API, answer
   });
 
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -43081,7 +43081,7 @@ function QuadraticApp({ onBack }) {
   const warmup = useWarmupIntervention({
     apiPath: 'quadratic-api',
     title: 'Quadratic',
-    started, finished, questionNumber, score, results, API
+    started, finished, questionNumber, score, results, API, answer
   });
 
   /**
@@ -48320,7 +48320,7 @@ function SequencesApp({ onBack }) {
   const warmup = useWarmupIntervention({
     apiPath: 'sequences-api',
     title: 'Sequences & Series',
-    started, finished, questionNumber, score, results, API
+    started, finished, questionNumber, score, results, API, answer
   });
 
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -48652,7 +48652,7 @@ function PercentApp({ onBack }) {
   const warmup = useWarmupIntervention({
     apiPath: 'percent-api',
     title: 'Percentages',
-    started, finished, questionNumber, score, results, API
+    started, finished, questionNumber, score, results, API, answer
   });
 
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -48837,7 +48837,7 @@ function IndicesApp({ onBack }) {
   const warmup = useWarmupIntervention({
     apiPath: 'indices-api',
     title: 'Indices',
-    started, finished, questionNumber, score, results, API
+    started, finished, questionNumber, score, results, API, answer
   });
 
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -49963,7 +49963,7 @@ function SqrtApp({ onBack }) {
   const warmup = useWarmupIntervention({
     apiPath: 'sqrt-api',
     title: 'Square Root',
-    started, finished, questionNumber, score, results, API
+    started, finished, questionNumber, score, results, API, answer
   });
 
   /**
@@ -51444,7 +51444,7 @@ function FuncEvalApp({ onBack }) {
   const warmup = useWarmupIntervention({
     apiPath: 'funceval-api',
     title: 'Functions',
-    started, finished, questionNumber, score, results, API
+    started, finished, questionNumber, score, results, API, answer
   });
 
   /**

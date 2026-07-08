@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { WARMUP_QUESTIONS_V01, getTopicDisplayName, WARMUP_SUPPORTED_TOPICS, getWarmupPrompt } from './constants';
 
-export function useWarmupIntervention({ apiPath, title, started, finished, questionNumber, score, results, API }) {
+export function useWarmupIntervention({ apiPath, title, started, finished, questionNumber, score, results, API, answer }) {
     // Hesitation Monitor State (Soft Intervention)
     const [hesitationPopupActive, setHesitationPopupActive] = useState(false)
     const hesitationShownRef = useRef(false)
@@ -10,6 +10,7 @@ export function useWarmupIntervention({ apiPath, title, started, finished, quest
     const clearCountRef = useRef(0)
     const idleTimerRef = useRef(null)
     const lastAnswerStrRef = useRef('')
+    const triggerHesitationRef = useRef(null)
 
     // ── Feature P v0.1: Struggle Detection & Warmup State ─────────────────────
     // frozenQuizState: snapshot taken when warmup fires (not used for restore in
@@ -76,6 +77,7 @@ export function useWarmupIntervention({ apiPath, title, started, finished, quest
         setHesitationPopupActive(true)
         hesitationShownRef.current = true
       }
+      triggerHesitationRef.current = triggerIntervention
 
       const resetTimer = () => {
         if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
@@ -125,6 +127,21 @@ export function useWarmupIntervention({ apiPath, title, started, finished, quest
         if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
       }
     }, [started, finished, warmupActive, pickerActive, learnRecActive, hesitationPopupActive])
+
+    // Backup hesitation tracker: watches the `answer` prop directly so NumPad-driven
+    // state changes (which don't fire native input events) also count toward clearCountRef.
+    useEffect(() => {
+      if (!started || finished) return
+      if (answer === undefined || answer === null) return
+      if (hesitationShownRef.current || hesitationCooldownRef.current > 0) return
+      if (answer === '' && lastAnswerStrRef.current !== '') {
+        clearCountRef.current++
+        if (clearCountRef.current >= 2) {
+          triggerHesitationRef.current && triggerHesitationRef.current('frequent_clears')
+        }
+      }
+      lastAnswerStrRef.current = answer
+    }, [answer, started, finished])
 
     // ── Feature P v0.1: Struggle Detection & Warmup Handlers ──────────────────
     //
