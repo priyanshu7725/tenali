@@ -1,239 +1,246 @@
 {
-  "addition-api": [
-    "basicarith-api"
+  "_meta": {
+    "comment": "Prerequisite map for feature P, derived from deployed /graph page (snapshot at PR time). Direct parents only — no transitive traversal.",
+    "source": "https://tenali.fun/graph",
+    "generated": "2026-07-08T12:53:31.868Z",
+    "schema": "Map of topic key (string) → array of prerequisite topic keys (strings). Direct parents only. Root topics have empty arrays. Server trims to first 3 entries at runtime via the picker cap."
+  },
+  "addition": [
+    "basicarith"
   ],
-  "multiply-api": [
-    "basicarith-api"
+  "angles": [
+    "basicarith"
   ],
-  "rounding-api": [
-    "basicarith-api"
+  "banking": [
+    "basicarith",
+    "percent"
   ],
-  "squaring-api": [
-    "multiply-api",
-    "addition-api"
+  "bases": [
+    "basicarith"
   ],
-  "fractionadd-api": [
-    "multiply-api"
+  "basicarith": [],
+  "bearings": [
+    "angles"
   ],
-  "percent-api": [
-    "fractionadd-api",
-    "ratio-api"
+  "binomial": [
+    "indices",
+    "polymul"
   ],
-  "profitloss-api": [
-    "percent-api"
+  "bounds": [
+    "rounding"
   ],
-  "ratio-api": [
-    "basicarith-api"
+  "circleth": [
+    "angles",
+    "triangles"
   ],
-  "sdt-api": [
-    "multiply-api",
-    "ratio-api"
+  "circmeasure": [
+    "trig"
   ],
-  "hcflcm-api": [
-    "multiply-api"
+  "complex": [
+    "sqrt",
+    "qformula"
   ],
-  "primefactor-api": [
-    "hcflcm-api"
+  "congruence": [
+    "triangles"
   ],
-  "bases-api": [
-    "basicarith-api"
+  "conics": [
+    "coordgeom"
   ],
-  "indices-api": [
-    "multiply-api"
+  "coordgeom": [
+    "basicarith",
+    "pythag"
   ],
-  "surds-api": [
-    "indices-api"
+  "decimals": [
+    "basicarith"
   ],
-  "log-api": [
-    "indices-api"
+  "diff": [
+    "indices",
+    "polymul",
+    "quadratic",
+    "limits"
   ],
-  "stdform-api": [
-    "indices-api"
+  "diffeq": [
+    "diff",
+    "integ"
   ],
-  "sqrt-api": [
-    "multiply-api",
-    "squaring-api"
+  "dotprod": [
+    "vectors",
+    "matrix"
   ],
-  "funceval-api": [
-    "basicarith-api"
+  "fractionadd": [
+    "multiply"
   ],
-  "quadratic-api": [
-    "multiply-api",
-    "indices-api"
+  "funceval": [
+    "basicarith"
   ],
-  "polymul-api": [
-    "multiply-api",
-    "indices-api"
+  "gk": [],
+  "gst": [
+    "percent"
   ],
-  "polyfactor-api": [
-    "polymul-api"
+  "hcflcm": [
+    "multiply"
   ],
-  "qformula-api": [
-    "polyfactor-api",
-    "sqrt-api"
+  "heron": [
+    "pythag",
+    "triangles",
+    "mensur"
   ],
-  "simul-api": [
-    "basicarith-api",
-    "funceval-api",
-    "lineareq-api"
+  "indices": [
+    "multiply"
   ],
-  "ineq-api": [
-    "basicarith-api",
-    "polyfactor-api"
+  "ineq": [
+    "basicarith",
+    "polyfactor"
   ],
-  "sequences-api": [
-    "basicarith-api",
-    "multiply-api",
-    "indices-api"
+  "integ": [
+    "diff"
   ],
-  "variation-api": [
-    "ratio-api",
-    "indices-api"
+  "invtrig": [
+    "trig"
   ],
-  "binomial-api": [
-    "indices-api",
-    "polymul-api"
+  "limits": [
+    "sequences"
   ],
-  "complex-api": [
-    "sqrt-api",
-    "qformula-api"
+  "lineareq": [
+    "basicarith"
   ],
-  "bounds-api": [
-    "rounding-api"
+  "lineq": [
+    "coordgeom",
+    "fractionadd"
   ],
-  "angles-api": [
-    "basicarith-api"
+  "linprog": [
+    "lineareq",
+    "ineq"
   ],
-  "triangles-api": [
-    "angles-api"
+  "log": [
+    "indices"
   ],
-  "polygons-api": [
-    "angles-api",
-    "triangles-api"
+  "matrix": [
+    "multiply",
+    "basicarith"
   ],
-  "congruence-api": [
-    "triangles-api"
+  "mensur": [
+    "multiply",
+    "squaring",
+    "polygons"
   ],
-  "similarity-api": [
-    "triangles-api",
-    "ratio-api"
+  "multiply": [
+    "basicarith"
   ],
-  "pythag-api": [
-    "triangles-api",
-    "squaring-api"
+  "percent": [
+    "fractionadd",
+    "ratio"
   ],
-  "circle-api": [
-    "angles-api",
-    "triangles-api"
+  "permcomb": [
+    "basicarith"
   ],
-  "mensur-api": [
-    "multiply-api",
-    "squaring-api",
-    "polygons-api"
+  "polyfactor": [
+    "polymul"
   ],
-  "transform-api": [
-    "angles-api",
-    "coordgeom-api"
+  "polygons": [
+    "angles",
+    "triangles"
   ],
-  "bearings-api": [
-    "angles-api"
+  "polymul": [
+    "multiply",
+    "indices"
   ],
-  "coordgeom-api": [
-    "basicarith-api",
-    "pythag-api"
+  "primefactor": [
+    "hcflcm"
   ],
-  "lineq-api": [
-    "coordgeom-api",
-    "fractionadd-api"
+  "prob": [
+    "fractionadd",
+    "basicarith"
   ],
-  "trig-api": [
-    "pythag-api",
-    "angles-api",
-    "ratio-api"
+  "profitloss": [
+    "percent"
   ],
-  "diff-api": [
-    "indices-api",
-    "polymul-api",
-    "quadratic-api",
-    "limits-api"
+  "pythag": [
+    "triangles",
+    "squaring"
   ],
-  "integ-api": [
-    "diff-api"
+  "qformula": [
+    "polyfactor",
+    "sqrt"
   ],
-  "stats-api": [
-    "basicarith-api"
+  "quadratic": [
+    "multiply",
+    "indices"
   ],
-  "prob-api": [
-    "fractionadd-api",
-    "basicarith-api"
+  "ratio": [
+    "basicarith"
   ],
-  "sets-api": [
-    "basicarith-api"
+  "remfactor": [
+    "polyfactor",
+    "polymul"
   ],
-  "vectors-api": [
-    "basicarith-api"
+  "rounding": [
+    "basicarith"
   ],
-  "dotprod-api": [
-    "vectors-api",
-    "matrix-api"
+  "sdt": [
+    "multiply",
+    "ratio"
   ],
-  "matrix-api": [
-    "multiply-api",
-    "basicarith-api"
+  "section": [
+    "coordgeom"
   ],
-  "decimals-api": [
-    "basicarith-api"
+  "sequences": [
+    "basicarith",
+    "multiply",
+    "indices"
   ],
-  "lineareq-api": [
-    "basicarith-api"
+  "sets": [
+    "basicarith"
   ],
-  "shares-api": [
-    "basicarith-api",
-    "percent-api"
+  "shares": [
+    "basicarith",
+    "percent"
   ],
-  "banking-api": [
-    "basicarith-api",
-    "percent-api"
+  "similarity": [
+    "triangles",
+    "ratio"
   ],
-  "gst-api": [
-    "percent-api"
+  "simul": [
+    "basicarith",
+    "funceval",
+    "lineareq"
   ],
-  "permcomb-api": [
-    "basicarith-api"
+  "spot": [],
+  "sqrt": [
+    "multiply",
+    "squaring"
   ],
-  "limits-api": [
-    "sequences-api"
+  "squaring": [
+    "multiply",
+    "addition"
   ],
-  "invtrig-api": [
-    "trig-api"
+  "stats": [
+    "basicarith"
   ],
-  "circmeasure-api": [
-    "trig-api"
+  "stdform": [
+    "indices"
   ],
-  "section-api": [
-    "coordgeom-api"
+  "surds": [
+    "indices"
   ],
-  "conics-api": [
-    "coordgeom-api"
+  "transform": [
+    "angles",
+    "coordgeom"
   ],
-  "remfactor-api": [
-    "polyfactor-api",
-    "polymul-api"
+  "triangles": [
+    "angles"
   ],
-  "heron-api": [
-    "pythag-api",
-    "triangles-api",
-    "mensur-api"
+  "trig": [
+    "pythag",
+    "angles",
+    "ratio"
   ],
-  "linprog-api": [
-    "lineareq-api",
-    "ineq-api"
+  "variation": [
+    "ratio",
+    "indices"
   ],
-  "diffeq-api": [
-    "diff-api",
-    "integ-api"
+  "vectors": [
+    "basicarith"
   ],
-  "gk-api": [],
-  "vocab-api": [],
-  "basicarith-api": []
+  "vocab": []
 }

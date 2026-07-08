@@ -22,6 +22,7 @@
  */
 
 import { useEffect, useState, useRef, useMemo } from 'react'
+import { useWarmupIntervention } from './hooks/useWarmupIntervention'
 import './App.css'
 
 // API base URL from environment variables (Vite)
@@ -41684,6 +41685,12 @@ function AdditionApp({ onBack }) {
   const timer = useTimer()
   const advanceFnRef = useRef(null)
 
+  const warmup = useWarmupIntervention({
+    apiPath: 'addition-api',
+    title: 'Addition',
+    started, finished, questionNumber, score, results, API
+  });
+
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
   const digitMap = { easy: 1, medium: 2, hard: 3, extrahard: 4 }
 
@@ -41709,6 +41716,7 @@ function AdditionApp({ onBack }) {
    * Initialize quiz state and fetch first question
    */
   const startQuiz = async () => {
+    warmup.onStartQuiz();
     const count = numQuestions !== '' && Number(numQuestions) > 0 ? Number(numQuestions) : DEFAULT_TOTAL
     setTotalQ(count)
     setStarted(true)
@@ -41763,6 +41771,7 @@ function AdditionApp({ onBack }) {
         body: JSON.stringify({ a: question.a, b: question.b, answer: Number(answer) }),
       })
       const data = await res.json()
+      warmup.onAnswer(data.correct);
       setIsCorrect(data.correct)
       const newScore = score + (data.correct ? 1 : 0)
       setScore(newScore)
@@ -41809,6 +41818,7 @@ function AdditionApp({ onBack }) {
       body: JSON.stringify({ a: question.a, b: question.b, answer: '', solve: true }),
     })
     const data = await res.json()
+    warmup.onSkip();
     setIsCorrect(false)
     const reasoning = `${question.a} + ${question.b} = ${data.correctAnswer}`
     setFeedback(`Solution: ${reasoning}`)
@@ -41834,6 +41844,7 @@ function AdditionApp({ onBack }) {
 
   return (
     <QuizLayout title="Addition" subtitle="Choose a level and solve addition questions" onBack={onBack} timer={started && !finished ? timer : null}>
+      {warmup.overlayElement}
       {!started && !finished && <div className="welcome-box">
         <p className="welcome-text">Practice addition!</p>
         <div className="checkbox-group" style={{ marginBottom: '12px' }}>
@@ -43067,6 +43078,12 @@ function QuadraticApp({ onBack }) {
 
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
 
+  const warmup = useWarmupIntervention({
+    apiPath: 'quadratic-api',
+    title: 'Quadratic',
+    started, finished, questionNumber, score, results, API
+  });
+
   /**
    * fetchQuestion(selectedDifficulty?): Fetch next quadratic substitution question from backend
    * Endpoint: /quadratic-api/question?difficulty={easy|medium|hard|extrahard}
@@ -43088,6 +43105,7 @@ function QuadraticApp({ onBack }) {
   }
 
   const startQuiz = async () => {
+    warmup.onStartQuiz();
     const count = numQuestions !== '' && Number(numQuestions) > 0 ? Number(numQuestions) : DEFAULT_TOTAL
     setTotalQ(count)
     setStarted(true)
@@ -43138,6 +43156,7 @@ function QuadraticApp({ onBack }) {
         body: JSON.stringify({ a: question.a, b: question.b, c: question.c, x: question.x, answer: Number(answer) }),
       })
       const data = await res.json()
+      warmup.onAnswer(data.correct);
       setIsCorrect(data.correct)
       if (data.correct) setScore((s) => s + 1)
 
@@ -43191,6 +43210,7 @@ function QuadraticApp({ onBack }) {
       body: JSON.stringify({ a: question.a, b: question.b, c: question.c, x: question.x, answer: '', solve: true }),
     })
     const data = await res.json()
+    warmup.onSkip();
     setIsCorrect(false)
     // Generate step-by-step working for feedback
     const { a, b, c, x } = question
@@ -43222,6 +43242,7 @@ function QuadraticApp({ onBack }) {
 
   return (
     <QuizLayout title="Quadratic" subtitle="Given x, find y = ax² + bx + c" onBack={onBack} timer={started && !finished ? timer : null}>
+      {warmup.overlayElement}
       {!started && !finished && <div className="welcome-box">
         <p className="welcome-text">Practice quadratic substitution!</p>
         <div className="checkbox-group" style={{ marginBottom: '12px' }}>
@@ -48296,6 +48317,12 @@ function SequencesApp({ onBack }) {
   const advancedRef = useRef(false)
   const submittedRef = useRef(false)
 
+  const warmup = useWarmupIntervention({
+    apiPath: 'sequences-api',
+    title: 'Sequences & Series',
+    started, finished, questionNumber, score, results, API
+  });
+
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
 
   const loadQuestion = async () => {
@@ -48309,6 +48336,7 @@ function SequencesApp({ onBack }) {
   }
 
   const startQuiz = () => {
+    warmup.onStartQuiz();
     const t = Math.max(1, Math.min(100, Number(numQuestions) || DEFAULT_TOTAL))
     setTotalQ(t); setScore(0); setQuestionNumber(1); setResults([]); setStarted(true); setFinished(false)
     setAdaptScore(0); adaptScoreRef.current = 0
@@ -48336,6 +48364,7 @@ function SequencesApp({ onBack }) {
     try {
       const r = await fetch(`${API}/sequences-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const data = await r.json()
+      warmup.onAnswer(data.correct);
       setIsCorrect(data.correct); setRevealed(true)
       if (data.correct) setScore(s => s + 1)
       setFeedback(data.correct ? `Correct! Answer: ${data.display}` : `Incorrect. Answer: ${data.display}`)
@@ -48357,6 +48386,7 @@ function SequencesApp({ onBack }) {
         body: JSON.stringify({ ...question, answer: '', solve: true }),
       })
       const data = await r.json()
+      warmup.onSkip();
       setIsCorrect(false); setRevealed(true)
       const display = data.display || data.correctAnswer || data.answer || ''
       const explanation = data.explanation || ''
@@ -48374,6 +48404,7 @@ function SequencesApp({ onBack }) {
 
   return (
     <QuizLayout title="Sequences & Series" subtitle="Arithmetic & geometric" onBack={onBack} timer={started && !finished ? timer : null}>
+      {warmup.overlayElement}
       {!started && !finished && <div className="welcome-box">
         <p className="welcome-text">Practice sequences and series!</p>
         <div className="checkbox-group" style={{ marginBottom: '12px' }}>
@@ -48618,6 +48649,12 @@ function PercentApp({ onBack }) {
   const advancedRef = useRef(false)
   const submittedRef = useRef(false)
 
+  const warmup = useWarmupIntervention({
+    apiPath: 'percent-api',
+    title: 'Percentages',
+    started, finished, questionNumber, score, results, API
+  });
+
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
 
   const loadQuestion = async () => {
@@ -48638,6 +48675,7 @@ function PercentApp({ onBack }) {
   }
 
   const startQuiz = () => {
+    warmup.onStartQuiz();
     const t = Math.max(1, Math.min(100, Number(numQuestions) || DEFAULT_TOTAL))
     setTotalQ(t)
     setScore(0)
@@ -48671,7 +48709,7 @@ function PercentApp({ onBack }) {
     try {
       const r = await fetch(`${API}/percent-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const data = await r.json()
-      setIsCorrect(data.correct)
+      setIsCorrect(data.correct); warmup.onAnswer(data.correct);
       setRevealed(true)
       if (data.correct) setScore(s => s + 1)
       setFeedback(data.correct ? `Correct! ${data.display}` : `Incorrect. Answer: ${data.display}`)
@@ -48693,7 +48731,7 @@ function PercentApp({ onBack }) {
         body: JSON.stringify({ ...question, userAnswer: '', solve: true }),
       })
       const data = await r.json()
-      setIsCorrect(false); setRevealed(true)
+      setIsCorrect(false); warmup.onSkip(); setRevealed(true)
       const display = data.display || data.correctAnswer || data.answer || ''
       const explanation = data.explanation || ''
       setFeedback(`Solution: ${display}${explanation ? '\n' + explanation : ''}`)
@@ -48711,6 +48749,7 @@ function PercentApp({ onBack }) {
 
   return (
     <QuizLayout title="Percentages" subtitle="Find, increase, reverse, compound" onBack={onBack} timer={started && !finished ? timer : null}>
+      {warmup.overlayElement}
       {!started && !finished && <div className="welcome-box">
         <p className="welcome-text">Practice percentages!</p>
         <div className="checkbox-group" style={{ marginBottom: '12px' }}>
@@ -48795,6 +48834,12 @@ function IndicesApp({ onBack }) {
   const timer = useTimer()
   const advanceFnRef = useRef(null)
 
+  const warmup = useWarmupIntervention({
+    apiPath: 'indices-api',
+    title: 'Indices',
+    started, finished, questionNumber, score, results, API
+  });
+
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
 
   const loadQuestion = async () => {
@@ -48813,6 +48858,7 @@ function IndicesApp({ onBack }) {
   }
 
   const startQuiz = () => {
+    warmup.onStartQuiz();
     const t = Math.max(1, Math.min(100, Number(numQuestions) || DEFAULT_TOTAL))
     setTotalQ(t)
     setScore(0)
@@ -48854,6 +48900,7 @@ function IndicesApp({ onBack }) {
         body: JSON.stringify(payload)
       })
       const data = await r.json()
+      warmup.onAnswer(data.correct);
       setIsCorrect(data.correct)
       setRevealed(true)
       if (data.correct) setScore(s => s + 1)
@@ -48912,6 +48959,7 @@ function IndicesApp({ onBack }) {
 
   return (
     <QuizLayout title="Indices" subtitle="Laws of exponents" onBack={onBack} timer={started && !finished ? timer : null}>
+      {warmup.overlayElement}
       {!started && !finished && <div className="welcome-box">
         <p className="welcome-text">Practice laws of indices!</p>
         <div className="checkbox-group" style={{ marginBottom: '12px' }}>
@@ -49912,6 +49960,12 @@ function SqrtApp({ onBack }) {
 
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
 
+  const warmup = useWarmupIntervention({
+    apiPath: 'sqrt-api',
+    title: 'Square Root',
+    started, finished, questionNumber, score, results, API
+  });
+
   /**
    * fetchQuestion(step): Fetch next square root question
    * Endpoint: /sqrt-api/question?difficulty={easy|medium|hard|extrahard}
@@ -49937,6 +49991,7 @@ function SqrtApp({ onBack }) {
    * Fetches first question
    */
   const startQuiz = async () => {
+    warmup.onStartQuiz();
     const count = numQuestions !== '' && Number(numQuestions) > 0 ? Number(numQuestions) : DEFAULT_TOTAL
     setTotalQ(count)
     setStarted(true)
@@ -49986,6 +50041,7 @@ function SqrtApp({ onBack }) {
         body: JSON.stringify({ q: question.q, answer: Number(answer) }),
       })
       const data = await res.json()
+      warmup.onAnswer(data.correct);
       setIsCorrect(data.correct)
       if (data.correct) setScore((s) => s + 1)
       // Show floor and ceiling values for reference
@@ -50024,6 +50080,7 @@ function SqrtApp({ onBack }) {
   const handleSolve = async () => {
     if (!question || revealed) return
     const timeTaken = timer.stop()
+    warmup.onSkip();
     setIsCorrect(false)
     setRevealed(true)
     setFeedback(`Solution: √${question.q} = (approximately)`)
@@ -50041,6 +50098,7 @@ function SqrtApp({ onBack }) {
 
   return (
     <QuizLayout title="Square Root" subtitle="Floor or ceiling is accepted" onBack={onBack} timer={started && !finished ? timer : null}>
+      {warmup.overlayElement}
       {!started && !finished && <div className="welcome-box">
         <p className="welcome-text">Practice square roots!</p>
         <div className="checkbox-group" style={{ marginBottom: '12px' }}>
@@ -51383,6 +51441,12 @@ function FuncEvalApp({ onBack }) {
 
   const effectiveDiff = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
 
+  const warmup = useWarmupIntervention({
+    apiPath: 'funceval-api',
+    title: 'Functions',
+    started, finished, questionNumber, score, results, API
+  });
+
   /**
    * loadQuestion(): Fetch next function evaluation question
    * Endpoint: /funceval-api/question?difficulty={easy|medium|hard}
@@ -51405,6 +51469,7 @@ function FuncEvalApp({ onBack }) {
    * Parse numQuestions input, reset score/results, load first question
    */
   const startQuiz = async () => {
+    warmup.onStartQuiz();
     const count = numQuestions !== '' && Number(numQuestions) > 0 ? Number(numQuestions) : DEFAULT_TOTAL
     setTotalQ(count)
     // Reset quiz state: mark as started, not finished, score to 0, question 1
@@ -51428,6 +51493,7 @@ function FuncEvalApp({ onBack }) {
       body: JSON.stringify({ answer: question.answer, userAnswer: Number(answer) }),
     })
     const data = await res.json()
+    warmup.onAnswer(data.correct);
     setIsCorrect(data.correct)
     if (data.correct) setScore(s => s + 1)
     // Format variable string for feedback (e.g., "x=2, y=3")
@@ -51453,6 +51519,7 @@ function FuncEvalApp({ onBack }) {
     const varStr = Object.entries(question.vars).map(([k, v]) => `${k}=${v}`).join(', ')
     setIsCorrect(false)
     setRevealed(true)
+    warmup.onSkip();
     setFeedback(`Solution: f(${varStr}) = ${question.answer}`)
   }
 
@@ -51483,6 +51550,7 @@ function FuncEvalApp({ onBack }) {
 
   return (
     <QuizLayout title="Functions" subtitle="Evaluate the function at the given values" onBack={onBack} timer={started && !finished ? timer : null}>
+      {warmup.overlayElement}
       {!started && !finished && <div className="welcome-box">
         <p className="welcome-text">Evaluate linear functions</p>
         <div className="checkbox-group" style={{ marginBottom: '12px' }}>
