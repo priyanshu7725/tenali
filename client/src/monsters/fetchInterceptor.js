@@ -12,7 +12,7 @@
  *     (basicarith, multiply, etc.). Endpoints like /api/auth/* or future
  *     non-math endpoints with `correct: false` are ignored.
  *  B. Debug instrumentation. When localStorage.tenali.monsters.debug === 'true',
- *     a `_monstersDebug` global is exposed with lastEvent/replay/storageDump/
+ *     a `_monstersDebug` global is exposed with lastEvent/eventLog/replay/storageDump/
  *     enable/disable. Dev-only; production users see nothing.
  *  C. Atomic append. monsterStore.append calls go through a module-level
  *     promise queue so concurrent wrong-answer fires don't race on
@@ -316,6 +316,7 @@ function installActiveInterceptor() {
 
         // Track for debug
         _lastEvent = eventDetail;
+        pushEventLog(eventDetail);
 
         // Mark seen (so toast variant flips to "strikes again!" next time)
         try {
@@ -359,6 +360,21 @@ function installDebugSurface() {
      */
     lastEvent() {
       return _lastEvent;
+    },
+
+    /**
+     * Get the full event history (most recent last), capped at 20 entries.
+     * Useful when the toast got missed but you want to confirm it fired.
+     */
+    eventLog() {
+      return getEventLog();
+    },
+
+    /**
+     * Clear the in-memory event history. Does NOT touch localStorage.
+     */
+    clearEventLog() {
+      clearEventLog();
     },
 
     /**
@@ -476,4 +492,19 @@ export function isMonstersInstalled() {
  */
 export function isMonstersEnabled() {
   return _enabled;
+}
+
+// Append-only ring buffer for event history (debug instrumentation). Exposed via window._monstersDebug.eventLog() so we can verify the chain beyond the last event.
+const _eventLog = [];  // append-only, capped at 20 entries
+const _eventLogMax = 20;
+
+function pushEventLog(eventDetail) {
+  _eventLog.push({ at: new Date().toISOString(), ...eventDetail });
+  if (_eventLog.length > _eventLogMax) _eventLog.shift();
+}
+function getEventLog() {
+  return _eventLog.slice();
+}
+function clearEventLog() {
+  _eventLog.length = 0;
 }
