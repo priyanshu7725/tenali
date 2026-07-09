@@ -47,6 +47,36 @@ export default defineConfig({
       '/lineareq-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Decimals quiz API
       '/decimals-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // ─── Topics added in audit-pass: 22 server endpoints with no proxy entry. All had the same HTML-instead-of-JSON bug. ───
+      // Banking / finance topics
+      '/banking-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/gst-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/shares-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/section-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Geometry topics
+      '/circmeasure-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/conics-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/heron-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/polygym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Algebra topics
+      '/remfactor-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/permcomb-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Calculus topics
+      '/diffeq-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/limits-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/invtrig-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/linprog-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Vector topics
+      '/dotprod-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/dotprodgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Gym variants of existing topics (mirror topic prefix)
+      '/fracaddgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/funcgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/gymdecimals-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/indicesgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/lineqgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Tatsavit module
+      '/tatsavit-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // General Knowledge quiz API
       '/gk-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Word Creator quiz API
