@@ -47,3 +47,27 @@ Conversation log: `D:\vins-phase-2\tenali-docs-backup\2026-07-09-feature-o-conve
 - `client/src/monsters/CHANGELOG.md` (new)
 
 **Verification:** branch only, no functional changes.
+
+---
+
+## v0.0.2 — 2026-07-09 (step 1: static explanations)
+
+**Session:** Implemented spec §3 explanations as a pure data module.
+
+**Files touched in this commit:**
+- `client/src/monsters/monsterExplanations.js` (new, 100 lines)
+
+**What ships:**
+- `MONSTER_EXPLANATIONS` keyed by monsterId (4 entries: bracketeer, sign-swapper, decimal-drifter, carry-crasher)
+- Each entry: `{ name, tagline, description, tips: string[] }`
+- 3 helper exports: `getMonsterExplanation(id)`, `getMonsterName(id)`, `getMonsterTagline(id)`
+- Helpers return safe defaults (null / 'Unknown Monster' / '') for unknown ids — never throw
+
+**Spec adherence:**
+- §3.1–§3.4 explanation text preserved verbatim
+- Schema flat (object key → entry), no nested structures
+- No imports, no state, no side effects — pure module
+
+**Line count delta:** spec §11 estimated 60 lines, actual 100 lines (incl. comments + 3 helpers). No functional change, just more docs.
+
+**Next:** step 2 — `monsterStore.js` (localStorage abstraction, ~100 lines).
