@@ -65,15 +65,27 @@ for (const c of urlCases) {
 
 // ─── Normalized extraction tests ────────────────────────────────────────────
 
+// Inlined caches mirroring the module-level ones in fetchInterceptor.js
+const _questionCache = new Map();
+const _lastRequestBody = new Map();
+
+function parseRequestBody(init) {
+  if (!init || !init.body) return null;
+  if (typeof init.body !== 'string') return null;
+  try { return JSON.parse(init.body); } catch (_e) { return null; }
+}
+
 function extractNormalized(data, url) {
   if (!data || typeof data !== 'object') return null;
   if (data.correct !== false) return null;
-  const question = data.question ?? data.prompt ?? data.q ?? data.stem ?? data.problem ?? '';
-  const correctAnswer = data.correctAnswer ?? data.expected ??
-    (data.correct === false ? data.answer : undefined);
-  const userAnswer = data.userAnswer ?? data.answer ?? data.submitted ?? data.studentAnswer ?? '';
   const topic = isCheckUrl(url);
   if (!topic) return null;
+  // Inlined caches for testing — kept in sync with fetchInterceptor.js
+  const cachedQ = _questionCache.get(topic);
+  const reqBody = _lastRequestBody.get(topic) || {};
+  const question = data.question ?? data.prompt ?? data.q ?? data.stem ?? data.problem ?? cachedQ?.prompt ?? cachedQ?.question ?? '';
+  const correctAnswer = data.correctAnswer ?? data.expected ?? data.answer ?? '';
+  const userAnswer = data.userAnswer ?? data.answer ?? data.submitted ?? data.studentAnswer ?? reqBody.answer ?? reqBody.userAnswer ?? reqBody.submitted ?? '';
   return { question, userAnswer, correctAnswer, topic };
 }
 
@@ -86,6 +98,42 @@ const extractCases = [
       url: 'https://api.example.com/basicarith-api/check',
     },
     expect: { question: '3(x+2)', userAnswer: '3x + 2', correctAnswer: '3x + 6', topic: 'basicarith' },
+  },
+  // NEW: actual server response shape — only {correct, correctAnswer, message}
+  // Question and userAnswer must come from caches.
+  {
+    label: 'real server shape: question from cache, userAnswer from request body',
+    in: {
+      data: { correct: false, correctAnswer: 6, message: 'Incorrect' },
+      url: 'https://api.example.com/basicarith-api/check',
+      setup: () => {
+        _questionCache.set('basicarith', { prompt: '3(x+2)', a: 3, b: 2, op: '×' });
+        _lastRequestBody.set('basicarith', { a: 3, b: 2, op: '×', answer: 8 });
+      },
+      teardown: () => { _questionCache.clear(); _lastRequestBody.clear(); },
+    },
+    expect: { question: '3(x+2)', userAnswer: 8, correctAnswer: 6, topic: 'basicarith' },
+  },
+  // NEW: parseRequestBody cases
+  {
+    label: 'parseRequestBody: JSON string parses',
+    in: { init: { method: 'POST', body: '{"a":3,"b":2,"answer":8}' } },
+    expect: { a: 3, b: 2, answer: 8 },
+  },
+  {
+    label: 'parseRequestBody: missing body returns null',
+    in: { init: { method: 'POST' } },
+    expect: null,
+  },
+  {
+    label: 'parseRequestBody: invalid JSON returns null',
+    in: { init: { method: 'POST', body: 'not-json' } },
+    expect: null,
+  },
+  {
+    label: 'parseRequestBody: null init returns null',
+    in: { init: null },
+    expect: null,
   },
   // Fallback: data.answer is the user's answer
   {
@@ -139,11 +187,20 @@ const extractCases = [
 let extractPass = 0, extractFail = 0;
 console.log('\n=== EXTRACTION ===');
 for (const c of extractCases) {
-  const got = extractNormalized(c.in.data, c.in.url);
+  // Per-test setup: populate caches if the case needs it
+  if (c.in.setup) c.in.setup();
+  let got;
+  if (c.in.init !== undefined) {
+    // parseRequestBody case
+    got = parseRequestBody(c.in.init);
+  } else {
+    got = extractNormalized(c.in.data, c.in.url);
+  }
   const ok = JSON.stringify(got) === JSON.stringify(c.expect);
   if (ok) extractPass++; else extractFail++;
   console.log((ok ? 'PASS' : 'FAIL') + ' | ' + c.label);
   if (!ok) console.log('  expect: ' + JSON.stringify(c.expect) + '\n  got:    ' + JSON.stringify(got));
+  if (c.in.teardown) c.in.teardown();
 }
 
 // ─── End-to-end: URL → extract → classify ───────────────────────────────────

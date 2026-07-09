@@ -73,6 +73,18 @@ let _debug = false;        // debug mode, mirrored to localStorage
 let _lastEvent = null;     // last intercepted event for debug
 let _appendQueue = Promise.resolve();  // serialized append queue (improvement C)
 
+// Per-topic cache of the most recent /question response. The /check response
+// does NOT include the question text — only the correct answer. To classify
+// mistakes like Bracketeer ("3(x+2)" → wrong distribution), we need the
+// original prompt, which we cache from the prior /question call.
+const _questionCache = new Map();  // topic → question object (prompt, a, b, op, etc.)
+
+// Per-topic cache of the most recent /check request body. The /check response
+// does NOT include the student's submitted answer — only the correct answer.
+// We capture the request body (parsed JSON) so the interceptor knows what the
+// student actually typed.
+const _lastRequestBody = new Map();  // topic → parsed request body
+
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
 function isCheckUrl(url) {
@@ -86,6 +98,35 @@ function isCheckUrl(url) {
   const topic = m[1];
   if (!ALLOWED_TOPICS.has(topic)) return null;
   return topic;
+}
+
+/**
+ * Identify a /question endpoint and return the topic, or null.
+ * Pattern: GET /<topic>-api/question[?...]
+ * Same strict-URL gating as isCheckUrl — URL must END with /question.
+ */
+function isQuestionUrl(url) {
+  if (typeof url !== 'string') return null;
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  const m = cleanUrl.match(/\/([a-z0-9-]+)-api\/question\/?$/);
+  if (!m) return null;
+  const topic = m[1];
+  if (!ALLOWED_TOPICS.has(topic)) return null;
+  return topic;
+}
+
+/**
+ * Parse a fetch init.body into a JS object, or null if not parseable.
+ * Body can be a string, Blob, FormData, etc — we only handle JSON strings.
+ */
+function parseRequestBody(init) {
+  if (!init || !init.body) return null;
+  if (typeof init.body !== 'string') return null;
+  try {
+    return JSON.parse(init.body);
+  } catch (_e) {
+    return null;
+  }
 }
 
 function readBoolFlag(key) {
@@ -107,29 +148,37 @@ function writeBoolFlag(key, val) {
 
 /**
  * Extract a normalized question/answer pair from a /check response.
- * Different endpoints return different shapes; we read a tolerant subset.
+ * The /check response only contains `{ correct, correctAnswer, message }`.
+ * It does NOT include the question prompt or the user's submitted answer.
+ * We pull those from per-topic caches populated by /question responses
+ * and the captured request body.
  * Spec §5.3.
  */
 function extractNormalized(data, url) {
   if (!data || typeof data !== 'object') return null;
   if (data.correct !== false) return null;  // only fire on wrong answers
 
-  // Question text — try multiple fields
-  const question =
-    data.question ?? data.prompt ?? data.q ?? data.stem ?? data.problem ?? '';
-
-  // Correct answer — try multiple fields
-  const correctAnswer =
-    data.correctAnswer ?? data.expected ??
-    (data.correct === false ? data.answer : undefined);
-
-  // Student answer — different endpoints name this differently
-  const userAnswer =
-    data.userAnswer ?? data.answer ?? data.submitted ?? data.studentAnswer ?? '';
-
   // Topic from URL is the source of truth; do not trust data.topic
   const topic = isCheckUrl(url);
   if (!topic) return null;
+
+  // Question text — try the response first, then the cached /question
+  const cachedQ = _questionCache.get(topic);
+  const question =
+    data.question ?? data.prompt ?? data.q ?? data.stem ?? data.problem ??
+    cachedQ?.prompt ?? cachedQ?.question ??
+    '';
+
+  // Correct answer — the /check response always includes this
+  const correctAnswer =
+    data.correctAnswer ?? data.expected ?? data.answer ?? '';
+
+  // Student answer — pull from captured request body (the /check response
+  // does NOT echo this back). Different endpoints use different field names.
+  const reqBody = _lastRequestBody.get(topic) || {};
+  const userAnswer =
+    data.userAnswer ?? data.answer ?? data.submitted ?? data.studentAnswer ??
+    reqBody.answer ?? reqBody.userAnswer ?? reqBody.submitted ?? '';
 
   // Sanity: need at least the topic; question/userAnswer/correctAnswer
   // may be empty strings (interceptor still fires, classifier returns null).
@@ -206,14 +255,36 @@ function installActiveInterceptor() {
   const originalFetch = window.fetch.bind(window);
 
   window.fetch = function patchedFetch(input, init) {
+    // Capture the URL and request body up front so we can use them after the
+    // fetch resolves. The /check response does NOT echo the request body, so
+    // we have to capture it here.
+    const reqUrl = typeof input === 'string' ? input : (input && input.url) || '';
+    const reqBodyParsed = parseRequestBody(init);
+    const reqTopic = isCheckUrl(reqUrl) || isQuestionUrl(reqUrl);
+    if (reqTopic && reqBodyParsed) {
+      _lastRequestBody.set(reqTopic, reqBodyParsed);
+    }
+
     // Improvement E: explicit async contract
     return Promise.resolve(originalFetch(input, init)).then(async (response) => {
       // Defensive: if anything below throws, return the original response
       // unchanged. The app MUST keep working.
       try {
-        const url = typeof input === 'string' ? input : (input && input.url) || '';
+        const url = reqUrl;
         const topic = isCheckUrl(url);
-        if (!topic) return response;
+        if (!topic) {
+          // Maybe a /question call — cache its body for later /check pairing
+          const qTopic = isQuestionUrl(url);
+          if (qTopic) {
+            try {
+              const qData = await response.clone().json().catch(() => null);
+              if (qData && typeof qData === 'object') {
+                _questionCache.set(qTopic, qData);
+              }
+            } catch (_e) { /* best effort */ }
+          }
+          return response;
+        }
 
         // Clone before reading — the response body is single-use
         const data = await response.clone().json().catch(() => null);
