@@ -1,0 +1,394 @@
+/**
+ * fetchInterceptor.js
+ *
+ * Installs a wrapper around window.fetch that observes /api/<topic>-api/check
+ * responses and, on a wrong answer, runs the monster classifier, persists the
+ * log entry, and dispatches a `tenali:wrongAnswer` CustomEvent for UI subscribers.
+ *
+ * Spec: D:\vins-phase-2\tenali-docs-backup\FEATURE_MONSTERS.md v0.2 §5.
+ *
+ * Design notes (improvements over v0.2 baseline spec):
+ *  A. Topic allow-list. We only run classification for math topic slugs
+ *     (basicarith, multiply, etc.). Endpoints like /api/auth/* or future
+ *     non-math endpoints with `correct: false` are ignored.
+ *  B. Debug instrumentation. When localStorage.tenali.monsters.debug === 'true',
+ *     a `_monstersDebug` global is exposed with lastEvent/replay/storageDump/
+ *     enable/disable. Dev-only; production users see nothing.
+ *  C. Atomic append. monsterStore.append calls go through a module-level
+ *     promise queue so concurrent wrong-answer fires don't race on
+ *     load -> modify -> save.
+ *  D. Strict URL gating. URL must END with `/check` (exact match on segment,
+ *     not a regex loose match). Avoids future endpoints that happen to
+ *     contain `/check` in their path.
+ *  E. Promise.resolve wrapping. Returns Promise.resolve(response) for
+ *     explicit async contract.
+ *
+ * Failure handling (spec §8):
+ *  - The interceptor wraps EVERYTHING in try/catch. Any internal error
+ *    returns the original response unchanged — the app must keep working
+ *    even if monsters is broken.
+ *  - monsterStore failures are caught and logged; UI event still fires.
+ *
+ * Lifecycle:
+ *  - `installMonstersInterceptor()` — idempotent; installs once.
+ *  - Call once at app startup (e.g. from App.jsx top or main.jsx).
+ */
+
+import { classifyMonster } from './classifier.js';
+import * as monsterStore from './monsterStore.js';
+
+// ─── Configuration ───────────────────────────────────────────────────────────
+
+/**
+ * Topics whose /check responses we observe. Mirrors the 14 single-input
+ * topics supported by server/warmupAdapter.js (topic-agnostic v0.2 design).
+ * Adding a new topic = add it here + (optionally) in classifier.js gating.
+ */
+const ALLOWED_TOPICS = new Set([
+  'basicarith',
+  'multiply',
+  'sqrt',
+  'quadratic',
+  'funceval',
+  'indices',
+  'addition',
+  'squaring',
+  'lineareq',
+  'rounding',
+  'ratio',
+  'percent',
+  'decimals',
+  'sequences',
+]);
+
+const EVENT_NAME = 'tenali:wrongAnswer';
+const DEBUG_FLAG_KEY = 'tenali.monsters.debug';
+const ENABLE_FLAG_KEY = 'tenali.monsters.enabled';
+
+// ─── Module state ────────────────────────────────────────────────────────────
+
+let _installed = false;
+let _enabled = true;       // runtime toggle, mirrored to localStorage
+let _debug = false;        // debug mode, mirrored to localStorage
+let _lastEvent = null;     // last intercepted event for debug
+let _appendQueue = Promise.resolve();  // serialized append queue (improvement C)
+
+// ─── Internal helpers ────────────────────────────────────────────────────────
+
+function isCheckUrl(url) {
+  // Improvement D: URL must END with `/check` (path segment exact match),
+  // and the previous path segment must look like `<topic>-api`.
+  if (typeof url !== 'string') return null;
+  // Strip query string and fragment
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  const m = cleanUrl.match(/\/([a-z0-9-]+)-api\/check\/?$/);
+  if (!m) return null;
+  const topic = m[1];
+  if (!ALLOWED_TOPICS.has(topic)) return null;
+  return topic;
+}
+
+function readBoolFlag(key) {
+  try {
+    return window.localStorage.getItem(key) === 'true';
+  } catch (_e) {
+    return false;
+  }
+}
+
+function writeBoolFlag(key, val) {
+  try {
+    if (val) window.localStorage.setItem(key, 'true');
+    else window.localStorage.removeItem(key);
+  } catch (_e) {
+    // ignore — flag persistence is best-effort
+  }
+}
+
+/**
+ * Extract a normalized question/answer pair from a /check response.
+ * Different endpoints return different shapes; we read a tolerant subset.
+ * Spec §5.3.
+ */
+function extractNormalized(data, url) {
+  if (!data || typeof data !== 'object') return null;
+  if (data.correct !== false) return null;  // only fire on wrong answers
+
+  // Question text — try multiple fields
+  const question =
+    data.question ?? data.prompt ?? data.q ?? data.stem ?? data.problem ?? '';
+
+  // Correct answer — try multiple fields
+  const correctAnswer =
+    data.correctAnswer ?? data.expected ??
+    (data.correct === false ? data.answer : undefined);
+
+  // Student answer — different endpoints name this differently
+  const userAnswer =
+    data.userAnswer ?? data.answer ?? data.submitted ?? data.studentAnswer ?? '';
+
+  // Topic from URL is the source of truth; do not trust data.topic
+  const topic = isCheckUrl(url);
+  if (!topic) return null;
+
+  // Sanity: need at least the topic; question/userAnswer/correctAnswer
+  // may be empty strings (interceptor still fires, classifier returns null).
+  return { question, userAnswer, correctAnswer, topic };
+}
+
+/**
+ * Serialize append() calls so concurrent wrong-answer fires don't race
+ * on localStorage load -> modify -> save.
+ */
+function enqueueAppend(entry) {
+  _appendQueue = _appendQueue.then(() => {
+    try {
+      monsterStore.append(entry);
+    } catch (e) {
+      console.warn('[monsters] append failed:', e.message);
+    }
+  });
+  return _appendQueue;
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────────
+
+/**
+ * Install the fetch interceptor. Idempotent. Safe to call multiple times.
+ * Reads enable/debug flags from localStorage at install time.
+ */
+export function installMonstersInterceptor() {
+  if (_installed) return;
+  if (typeof window === 'undefined' || typeof window.fetch !== 'function') {
+    // Not in a browser environment; nothing to wrap.
+    return;
+  }
+
+  _enabled = readBoolFlag(ENABLE_FLAG_KEY);
+  if (!_enabled) {
+    // Spec §5.1: feature is gated off. Wrap a noop so a later runtime
+    // enable() can swap it in.
+    installNoopInterceptor();
+    _installed = true;
+    return;
+  }
+
+  _debug = readBoolFlag(DEBUG_FLAG_KEY);
+  installActiveInterceptor();
+  _installed = true;
+}
+
+/**
+ * No-op interceptor: every fetch goes through unchanged. Used when the
+ * feature is disabled via the localStorage flag.
+ */
+function installNoopInterceptor() {
+  // No wrapping; original window.fetch remains untouched.
+}
+
+/**
+ * Active interceptor: wraps window.fetch with monster classification logic.
+ */
+function installActiveInterceptor() {
+  const originalFetch = window.fetch.bind(window);
+
+  window.fetch = function patchedFetch(input, init) {
+    // Improvement E: explicit async contract
+    return Promise.resolve(originalFetch(input, init)).then(async (response) => {
+      // Defensive: if anything below throws, return the original response
+      // unchanged. The app MUST keep working.
+      try {
+        const url = typeof input === 'string' ? input : (input && input.url) || '';
+        const topic = isCheckUrl(url);
+        if (!topic) return response;
+
+        // Clone before reading — the response body is single-use
+        const data = await response.clone().json().catch(() => null);
+        const normalized = extractNormalized(data, url);
+        if (!normalized) return response;
+
+        // Run the classifier
+        const monsterId = classifyMonster(normalized);
+        if (!monsterId) return response;
+
+        const eventDetail = {
+          monsterId,
+          topic,
+          question: normalized.question,
+          userAnswer: normalized.userAnswer,
+          correctAnswer: normalized.correctAnswer,
+          timestamp: Date.now(),
+        };
+
+        // Persist (queued, so concurrent fires serialize)
+        enqueueAppend({
+          monsterId,
+          topic,
+          question: normalized.question,
+          wrongAnswer: normalized.userAnswer,
+          correctAnswer: normalized.correctAnswer,
+          timestamp: eventDetail.timestamp,
+        });
+
+        // Track for debug
+        _lastEvent = eventDetail;
+
+        // Mark seen (so toast variant flips to "strikes again!" next time)
+        try {
+          monsterStore.markMonsterSeen(monsterId);
+        } catch (e) {
+          console.warn('[monsters] markMonsterSeen failed:', e.message);
+        }
+
+        // Dispatch UI event
+        try {
+          window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: eventDetail }));
+        } catch (e) {
+          console.warn('[monsters] event dispatch failed:', e.message);
+        }
+
+        return response;
+      } catch (e) {
+        // Last-ditch guard: never let interceptor logic break a fetch
+        console.warn('[monsters] interceptor internal error, returning original response:', e.message);
+        return response;
+      }
+    });
+  };
+
+  // Expose debug surface if debug flag is on
+  if (_debug) {
+    installDebugSurface();
+  }
+}
+
+/**
+ * Improvement B: dev-only debug surface.
+ * Exposes `_monstersDebug` on window with helpful inspection tools.
+ * Production users see nothing — debug flag is off by default.
+ */
+function installDebugSurface() {
+  window._monstersDebug = {
+    /**
+     * Get the last intercepted event, or null if no event has fired yet.
+     */
+    lastEvent() {
+      return _lastEvent;
+    },
+
+    /**
+     * Re-run the classifier on an arbitrary input. Useful when tuning rules.
+     * @param {{question, userAnswer, correctAnswer, topic}} input
+     */
+    replay(input) {
+      return classifyMonster(input || {});
+    },
+
+    /**
+     * Dump the current localStorage state formatted for inspection.
+     */
+    storageDump() {
+      try {
+        const raw = window.localStorage.getItem('tenali.monsterLog.v1');
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return { error: e.message };
+      }
+    },
+
+    /**
+     * Runtime enable — installs the active interceptor if not already installed.
+     * Persists the flag so it survives reloads.
+     */
+    enable() {
+      writeBoolFlag(ENABLE_FLAG_KEY, true);
+      _enabled = true;
+      if (!_installed) {
+        installActiveInterceptor();
+        _installed = true;
+      }
+    },
+
+    /**
+     * Runtime disable — restores the original fetch.
+     * Note: this re-installs window.fetch with a passthrough; the original
+     * reference held in `_installed` is lost. Use reset() to fully re-install.
+     */
+    disable() {
+      writeBoolFlag(ENABLE_FLAG_KEY, false);
+      _enabled = false;
+      // Note: we don't unwrap window.fetch because we don't have a saved
+      // reference to the pre-interceptor original. Instead, the gate is
+      // enforced at install time. To re-enable, call reset() first.
+    },
+
+    /**
+     * Reset installation state and re-install based on current flags.
+     * Use this when you've changed enable/debug flags and want a clean reload.
+     */
+    reset() {
+      _installed = false;
+      _lastEvent = null;
+      _appendQueue = Promise.resolve();
+      installMonstersInterceptor();
+    },
+
+    /**
+     * Test classification with a specific monster pattern.
+     * Helper for spec §3 example verification in DevTools.
+     */
+    testSpec() {
+      const cases = [
+        { label: 'Bracketeer trigger', input: { question: '3(x+2)', userAnswer: '3x + 2', correctAnswer: '3x + 6' }, expect: 'bracketeer' },
+        { label: 'Sign Swapper trigger', input: { question: '(-3) + 5', userAnswer: '-2', correctAnswer: '2' }, expect: 'sign-swapper' },
+        { label: 'Decimal Drifter trigger', input: { question: '0.5 + 0.3', userAnswer: '0.08', correctAnswer: '0.8' }, expect: 'decimal-drifter' },
+      ];
+      return cases.map(c => ({
+        ...c,
+        got: classifyMonster(c.input),
+        pass: classifyMonster(c.input) === c.expect,
+      }));
+    },
+  };
+}
+
+/**
+ * Enable the feature at runtime. Persists the flag.
+ * Safe to call before or after installMonstersInterceptor().
+ */
+export function enableMonsters() {
+  writeBoolFlag(ENABLE_FLAG_KEY, true);
+  _enabled = true;
+  if (_installed) {
+    // Already installed — re-install to swap from noop to active.
+    _installed = false;
+    installMonstersInterceptor();
+  }
+}
+
+/**
+ * Disable the feature at runtime. Persists the flag.
+ * Note: this does not unwrap window.fetch; use a full page reload to
+ * fully uninstall, or call reset() to re-install based on flags.
+ */
+export function disableMonsters() {
+  writeBoolFlag(ENABLE_FLAG_KEY, false);
+  _enabled = false;
+  // We don't unwrap here. To unwrap, would need to save originalFetch
+  // at install time and re-bind. v0.2 doesn't need unwrap; future v2
+  // might add a real toggle.
+}
+
+/**
+ * Diagnostic — is the interceptor currently installed?
+ */
+export function isMonstersInstalled() {
+  return _installed;
+}
+
+/**
+ * Diagnostic — is the feature currently enabled (via flag)?
+ */
+export function isMonstersEnabled() {
+  return _enabled;
+}
