@@ -12,6 +12,9 @@ const Parser = acorn.Parser.extend(jsx());
 const FILES = [
   // Path relative to repo root
   'client/src/monsters/MonsterToast.jsx',
+  'client/src/monsters/HallPanel.jsx',
+  'client/src/monsters/MonsterCard.jsx',
+  'client/src/monsters/MonsterDetail.jsx',
   'client/src/App.jsx',
 ];
 

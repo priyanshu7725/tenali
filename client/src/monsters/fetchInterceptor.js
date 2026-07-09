@@ -143,12 +143,25 @@ function extractNormalized(data, url) {
 function enqueueAppend(entry) {
   _appendQueue = _appendQueue.then(() => {
     try {
-      monsterStore.append(entry);
+      const ok = monsterStore.append(entry);
+      if (ok) notifyMonsterLogChanged();
     } catch (e) {
       console.warn('[monsters] append failed:', e.message);
     }
   });
   return _appendQueue;
+}
+
+/**
+ * Fire a same-tab CustomEvent so App.jsx can re-hydrate monsterLog state.
+ * The `storage` event only fires across tabs, not within the same tab —
+ * so this bridge is required for the Hall panel to update in real time.
+ */
+function notifyMonsterLogChanged() {
+  try {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('tenali:monsterLogChanged'));
+  } catch (_e) { /* never break the interceptor */ }
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
@@ -235,7 +248,8 @@ function installActiveInterceptor() {
 
         // Mark seen (so toast variant flips to "strikes again!" next time)
         try {
-          monsterStore.markMonsterSeen(monsterId);
+          const newlyMarked = monsterStore.markMonsterSeen(monsterId);
+          if (newlyMarked) notifyMonsterLogChanged();
         } catch (e) {
           console.warn('[monsters] markMonsterSeen failed:', e.message);
         }

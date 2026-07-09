@@ -79,6 +79,8 @@ import PercentExplanationApp from './PercentExplanationApp'
 import { playSound } from './audioContext'
 import { installMonstersInterceptor } from './monsters/fetchInterceptor.js'
 import MonsterToast from './monsters/MonsterToast.jsx'
+import HallPanel from './monsters/HallPanel.jsx'
+import { load as loadMonsterLog } from './monsters/monsterStore.js'
 
 // API base URL from environment variables (Vite)
 const API = import.meta.env.VITE_API_BASE_URL || '';
@@ -42239,6 +42241,36 @@ function App() {
     try { installMonstersInterceptor() } catch (_e) { /* never break the app */ }
   }, [])
 
+  // Misconception Monsters — Hall modal state. Spec §6.5.
+  // The monsterLog is hydrated from localStorage on mount. Toast CTA / future
+  // header icon can flip hallOpen; HallPanel reads from monsterLog snapshot.
+  const [monsterLog, setMonsterLog] = useState(() => {
+    try { return loadMonsterLog() } catch { return null }
+  })
+  const [hallOpen, setHallOpen] = useState(false)
+
+  // Keep monsterLog in sync with localStorage. The fetchInterceptor's
+  // monsterStore.append() writes to localStorage; we re-hydrate when the
+  // browser fires a 'storage' event (e.g. another tab). For same-tab writes
+  // we expose a small global hook that the interceptor can call; fallback is
+  // a window event.
+  useEffect(() => {
+    function onStorage(e) {
+      if (e && e.key === 'tenali.monsterLog.v1') {
+        try { setMonsterLog(loadMonsterLog()) } catch {}
+      }
+    }
+    function onMonsterLogChanged() {
+      try { setMonsterLog(loadMonsterLog()) } catch {}
+    }
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('tenali:monsterLogChanged', onMonsterLogChanged)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('tenali:monsterLogChanged', onMonsterLogChanged)
+    }
+  }, [])
+
   // Currently selected quiz mode (null = home menu, or key like 'gk', 'addition', etc.)
   const [mode, setMode] = useState(() => {
     try {
@@ -44143,8 +44175,20 @@ function App() {
         </div>
       )}
       {renderCelebrationModal()}
-      {/* Misconception Monsters — toast overlay, portals to body. Spec §6. */}
-      <MonsterToast />
+      {/* Misconception Monsters — toast overlay (portals to body) + Hall modal. Spec §6. */}
+      <MonsterToast onOpenHall={() => setHallOpen(true)} />
+      <HallPanel
+        open={hallOpen}
+        onClose={() => setHallOpen(false)}
+        monsterLog={monsterLog}
+        onStartCure={(monsterId, topic) => {
+          // Placeholder for step 7 (CureFlow). Closes hall and would open
+          // the cure runner. For now we just close; step 7 wires the actual
+          // runner.
+          console.log('[monsters] start cure requested:', monsterId, topic)
+          setHallOpen(false)
+        }}
+      />
     </div>
   )
 }
