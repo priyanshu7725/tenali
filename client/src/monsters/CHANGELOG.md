@@ -294,3 +294,87 @@ E. **Promise.resolve wrapping.** Explicit async contract for the patched fetch r
 - Spec §11 estimated step 5 at 130 lines
 - Actual: ~225 (component) + 11 (App.jsx) + 175 (tests) = ~410 lines total
 - Diff explained by: portal complexity, queue logic, animation CSS, comprehensive tests
+
+---
+
+## v0.0.7 — 2026-07-09 (step 6: HallPanel + MonsterCard + MonsterDetail)
+
+**Session:** Built the Hall of Silly Mistakes modal, the per-monster cards and detail view, and wired everything into App.jsx. Added same-tab storage sync.
+
+**Files touched in this commit:**
+- `client/src/monsters/HallPanel.jsx` (new, ~220 lines)
+- `client/src/monsters/MonsterCard.jsx` (new, ~140 lines)
+- `client/src/monsters/MonsterDetail.jsx` (new, ~250 lines)
+- `client/src/App.jsx` (modified, 39 lines added)
+- `client/src/monsters/fetchInterceptor.js` (modified, 18 lines added)
+- `client/src/monsters/__tests__/hallPanel.test.cjs` (new, ~120 lines, 31 checks)
+- `client/src/monsters/__tests__/monsterToast.parse.cjs` (extended, +3 lines)
+
+**HallPanel component:**
+- Full-screen modal with semi-transparent backdrop
+- Centered card (max 720px wide, max-height calc(100vh - 48px))
+- Header: title + count subtitle + close button (× and ← for back-from-detail)
+- Body: responsive grid (1 col mobile, 2 col ≥560px)
+- Empty state: "No monsters yet. Get a question wrong to meet one." (🌱)
+- Two view modes: grid (default) and detail (when card tapped)
+- Closes on: backdrop click, Escape key, close button
+- Detail mode: Escape returns to grid first, then closes
+- Focus management: card auto-focuses on open (so Esc works without click)
+- ARIA: `role="dialog"`, `aria-modal="true"`, `aria-label="Hall of Silly Mistakes"`
+
+**MonsterCard:**
+- Tile layout: blob (56×56) + name + meta line + cure badge
+- Meta line: "Breached X times · last 2 hr ago" (or "Not yet met" for unseen)
+- Cure badge: ✦ N when at least one successful cure, hidden otherwise
+- Unseen monsters: rendered as ❓ silhouettes, opacity 0.45, disabled (no click, no hover)
+- Hover effect: subtle translateY(-2px) + accent border-color
+- Color per monster matches toast/detail (consistent visual identity)
+- ARIA: aria-label changes between seen/unseen states
+
+**MonsterDetail:**
+- Hero section: 80×80 pulsing blob + name + tagline, gradient backdrop
+- 3-stat row: Breaches / Last Seen / Cures (success/total)
+- Description paragraph (from `getMonsterExplanation`)
+- Tips as `<ul>` (from explanation.tips array)
+- Topic selector: defaulted to most-frequent historical topic for this monster
+  - Computed via `getSuggestedTopic(monsterId)` which scans `state.log`
+  - Falls back to empty (Start Cure disabled) when no history
+- Start Cure button: calls `onStartCure(monsterId, topic)`
+- Currently `onStartCure` in App.jsx just closes the hall + logs (step 7 wires CureFlow)
+
+**App.jsx integration:**
+- New state: `monsterLog` (hydrated from `loadMonsterLog()` once), `hallOpen` (bool)
+- New useEffect: listens for `storage` event (cross-tab sync) + `tenali:monsterLogChanged` (same-tab sync)
+- Mount: `<MonsterToast onOpenHall={...} />` + `<HallPanel open={...} onClose={...} ... />`
+- Why both events: `storage` event doesn't fire in the originating tab; the CustomEvent bridge covers same-tab updates from the interceptor
+
+**fetchInterceptor update:**
+- Added `notifyMonsterLogChanged()` helper
+- Fires `tenali:monsterLogChanged` CustomEvent after:
+  - Successful `monsterStore.append()` (every wrong answer)
+  - Successful `monsterStore.markMonsterSeen()` returning true (first sighting only)
+- Both wrapped in try/catch (spec §8 — never break the interceptor)
+
+**Spec adherence:**
+- §6.5 layout: header + grid + empty state — implemented
+- §6.6 placement-agnostic: takes `open`/`onClose` — done
+- §6.2 state ownership: App-level for `monsterLog` and `hallOpen`, local for `selectedId` — done
+- §8 failure modes: backdrop click closes, Escape closes, focus mgmt, CSS injection idempotent — done
+
+**Smoke tests:**
+- `hallPanel.test.cjs`: 31 source-level checks, all pass:
+  - HallPanel: exports, imports, early-return, Escape handler, backdrop click, empty state, MonsterCard grid, detail branch, onStartCure passthrough
+  - MonsterCard: exports, unseen/seen states, disabled prop, cure badge, blob with emoji
+  - MonsterDetail: exports, explanation usage, tips list, Start Cure button, 3-stat row, suggested topic computation, disabled-when-no-topic
+  - App.jsx: HallPanel import, monsterLog hydration, hallOpen state, both event listeners, HallPanel mount, MonsterToast onOpenHall
+- `monsterToast.parse.cjs`: 5/5 files parse cleanly (added HallPanel/Card/Detail)
+
+**Test discovery:**
+- 3 initial regex failures: my regex was missing the literal quotes in import paths. Fixed to use `'.\/MonsterCard\.jsx'` (with single quotes) instead of unquoted pattern.
+
+**Time accounting:**
+- Spec §11 estimated step 6 at ~350 lines
+- Actual: ~610 (components) + 39 (App.jsx) + 18 (interceptor) + 175 (tests) = ~840 lines
+- Diff explained by: comprehensive tests, ARIA attributes, focus management, doc comments
+
+**Next:** step 7 — `CureFlow.jsx` (~250 lines, MEDIUM risk — multi-state, multi-fetch, fallback logic).
