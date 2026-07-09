@@ -113,3 +113,54 @@ Conversation log: `D:\vins-phase-2\tenali-docs-backup\2026-07-09-feature-o-conve
 - No React, no UI dependencies — pure module, importable from anywhere
 
 **Next:** step 3 — `classifier.js` (4 monster rules + classifyMonster, ~180 lines).
+
+---
+
+## v0.0.4 — 2026-07-09 (step 3: classifier + 2 bug fixes from smoke test)
+
+**Session:** Wrote 4-rule classifier with first-match-wins ordering; ran smoke test against spec examples + edge cases; fixed 2 real bugs.
+
+**Files touched in this commit:**
+- `client/src/monsters/classifier.js` (new, 196 lines) — the classifier
+- `client/src/monsters/__tests__/classifier.test.js` (new, ~80 lines) — smoke test
+- `client/src/monsters/classifier.js` (fixup, 33 lines delta) — bug fixes
+
+**Classifier API:**
+- `classifyMonster({ question, userAnswer, correctAnswer, topic })` — returns `'bracketeer' | 'sign-swapper' | 'decimal-drifter' | 'carry-crasher' | null`
+- `MONSTER_IDS` — ordered array matching spec §2 (Bracketeer first)
+- `MONSTERS_ENABLED` — toggle map (carry-crasher `false`)
+- `isMonsterEnabled(id)` — diagnostic
+
+**Rule functions (each pure, first-match-wins):**
+- `isBracketeerSlip(q, ua, ca)` — regex on `a(b±c)` shape, checks "first term only" patterns `aX + c`, `aX - |c|`, or just `aX`
+- `isSignSwap(q, ua, ca)` — `parseFloat(ua) === -parseFloat(ca)` numerically
+- `isDecimalDrift(q, ua, ca)` — both parse as decimals, ratio is exact power of 10
+- `isCarryMistake(q, ua, ca)` — `q` is multi-digit add/sub, diff is exactly ±1/±10/±100 (GATED OFF in v0.2)
+
+**Bug fixes (caught by smoke test on first run, before any UI shipped):**
+- **Bracketeer regex too narrow.** Original regex required `+` between inner variable and number: `/^\s*(-?\d+)\s*\(\s*([a-zA-Z])\s*\+\s*(-?\d+)\s*\)\s*$/`. Missed `3(x-2)` style questions. Spec example for Bracketeer only covered `+` so this slipped through.
+- **Decimal Drifter `ratio < 0.1` early-exit was wrong.** Original rule had `if (ratio < 0.1) return false;` which excluded the spec's own example (`0.08/0.8 = 0.1` is exactly `10^-1`).
+
+**Why both bugs would've shipped:**
+- Bracketeer: any student doing subtraction inside brackets would have seen no monster, no explanation, no learning signal.
+- Decimal Drifter: every decimal drift was missed.
+
+**Spec adherence:**
+- §3.1 example trigger / non-trigger: PASS
+- §3.2 example trigger / non-trigger: PASS
+- §3.3 example trigger / non-trigger: PASS
+- §3.4 gated-off behavior: confirmed (gate flag prevents classification)
+- §5.4 enable-map exact shape: confirmed
+
+**Tests:**
+- 14 cases in `__tests__/classifier.test.js`: 4 spec examples (2 per matching monster), 2 ambiguous, 2 negative-inner Bracketeer, 2 multiplication Sign Swap, 2 edge cases (empty, garbage)
+- Run with: `node client/src/monsters/__tests__/classifier.test.js`
+- All 14 pass after the fixes
+- Tests live in `__tests__/` directory for future test runner migration (spec §11 had no test directory; this fills that gap)
+
+**Caveat — Carry Crasher NOT exercised:**
+- The rule's logic is implemented but the gate is off
+- Unit tests for the rule logic deferred to v0.2.1 (need to flip MONSTERS_ENABLED in test setup)
+- v2 may want to rewrite with stricter pattern matching (e.g. require addition column structure in question text, not just operand1+operand2)
+
+**Next:** step 4 — `fetchInterceptor.js` (window.fetch patch + event, ~80 lines, HIGH risk).
