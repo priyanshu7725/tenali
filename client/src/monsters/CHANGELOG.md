@@ -71,3 +71,45 @@ Conversation log: `D:\vins-phase-2\tenali-docs-backup\2026-07-09-feature-o-conve
 **Line count delta:** spec §11 estimated 60 lines, actual 100 lines (incl. comments + 3 helpers). No functional change, just more docs.
 
 **Next:** step 2 — `monsterStore.js` (localStorage abstraction, ~100 lines).
+
+---
+
+## v0.0.3 — 2026-07-09 (step 2: monsterStore)
+
+**Session:** localStorage-backed persistence layer.
+
+**Files touched in this commit:**
+- `client/src/monsters/monsterStore.js` (new, 276 lines)
+
+**Public API:**
+- `load()`, `save(state)`, `append(entry)` — core read/write
+- `isMonsterSeen(id)`, `markMonsterSeen(id)` — toast variant driver
+- `getMonsterBreachCount(id)`, `getMonsterLastAttempt(id)` — Hall card data
+- `getCureHistory(id)`, `recordCure(id, result)` — cure tracking
+- `reset()`, `isLocalStorageAvailable()` — diagnostic / future admin
+
+**Failure handling (spec §8):**
+- Probe-based detection of localStorage availability at module init (catches private-mode SecurityError)
+- In-memory fallback Map when localStorage is unreachable
+- JSON parse errors logged + treated as fresh install
+- Schema version mismatch (`version !== 1`) → log + reset to empty
+- `migrate()` defensively adds missing `cures[id]` arrays and `seenMonsterIds` arrays for any future monster added
+
+**Known monster IDs (hard-coded list):**
+- bracketeer, sign-swapper, decimal-drifter, carry-crasher
+
+**Spec adherence:**
+- §4.1 entry shape: `{ monsterId, topic, questionId, wrongAnswer, correctAnswer, timestamp }` — `append()` accepts partial entries and stamps timestamp
+- §4.2 root shape: `{ version, log, cures: { [id]: [] }, seenMonsterIds }` — matches exactly
+- §4.3 schema migration: forward-looking only, current version 1
+- §8 failure modes: all 4 covered (quota, unavailable, JSON parse, interceptor — interceptor is step 4)
+
+**Line count delta:** spec §11 estimated 100 lines, actual 276 lines. Diff is fully accounted for by failure-mode handling, migration logic, defensive guards on every public function, and JSDoc comments. No scope creep — just spec §8 expanded into actual code.
+
+**Verification:**
+- Public API is sync, all functions never throw
+- Probe at module init runs once
+- Idempotency: `markMonsterSeen` returns false on re-mark; `append` validates monsterId and topic before write
+- No React, no UI dependencies — pure module, importable from anywhere
+
+**Next:** step 3 — `classifier.js` (4 monster rules + classifyMonster, ~180 lines).
