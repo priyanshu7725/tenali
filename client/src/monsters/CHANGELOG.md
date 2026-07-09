@@ -230,3 +230,67 @@ E. **Promise.resolve wrapping.** Explicit async contract for the patched fetch r
 - Cure flow (step 7)
 
 **Next:** step 5 — `MonsterToast.jsx` + App.jsx top mount (~130 lines total).
+
+---
+
+## v0.0.6 — 2026-07-09 (step 5: MonsterToast + App.jsx mount)
+
+**Session:** Built the toast UI component, mounted it in App.jsx, validated JSX parses cleanly via acorn + acorn-jsx.
+
+**Files touched in this commit:**
+- `client/src/monsters/MonsterToast.jsx` (new, ~225 lines)
+- `client/src/App.jsx` (modified, 11 lines added)
+- `client/src/monsters/__tests__/monsterToast.parse.cjs` (new, 35 lines)
+- `client/src/monsters/__tests__/monsterToast.test.cjs` (new, ~140 lines)
+
+**MonsterToast component:**
+- Subscribes to `tenali:wrongAnswer` CustomEvent on window
+- Two variants driven by `isMonsterSeen()`:
+  - **Introduced** (5s on screen): "Bracketeer introduced!" with **View Hall** CTA
+  - **Repeat** (2s on screen): "Bracketeer strikes again!" tappable to dismiss
+- Distinctive CSS blob per monster (color + emoji from `MONSTER_COLORS` map)
+- Pulse animation on the blob (subtle, 1.4s loop)
+- Slide-in animation from right, fade-out on dismiss (300ms)
+- **Queue for back-to-back wrong answers**: latest event shown after current dismisses
+- Renders via `react-dom` portal to `document.body` — works in every route without per-route wiring
+- CSS injected once via a `<style>` tag with `data-monster-toast` attribute (idempotent)
+- Theme-aware: uses CSS variables (`--card-bg`, `--text`) if present, falls back to own dark palette
+
+**App.jsx integration:**
+- Imports `installMonstersInterceptor` and `MonsterToast`
+- `useEffect(() => installMonstersInterceptor())` — one-time at app mount
+- Wrapped in try/catch so even an interceptor install failure can't break the app
+- `<MonsterToast />` mounted in main return alongside Home/ActiveApp
+
+**Why portal rendering (not per-route mount):**
+- The App component has 8+ early-return routes (`if (pathname === '/tables')`, etc.) + a final return
+- Portal means the toast sits outside the React tree, visible in EVERY route with a single mount point
+- Cleaner than wrapping 9 routes individually
+
+**Smoke tests:**
+- `monsterToast.parse.cjs`: acorn + acorn-jsx parses `MonsterToast.jsx` (8131 bytes) + `App.jsx` (2.6MB) cleanly
+- `monsterToast.test.cjs`: 9 checks pass
+  - Event name = `tenali:wrongAnswer` ✓
+  - Intro duration = 5000ms, repeat = 2000ms (spec §6.5) ✓
+  - All 4 monsters in MONSTER_COLORS ✓
+  - Uses React portal to body ✓
+  - Variant driven by `isMonsterSeen` ✓
+  - Queue logic: 2nd event while active → queued ✓
+  - After dismiss, queued event fires ✓
+  - Intro vs repeat variant logic ✓
+
+**Test discovery:**
+- Initial queue test had wrong expectations. The fetchInterceptor pre-marks monsters as seen BEFORE dispatching the event, so the toast ALWAYS sees a non-intro first. The intro path only fires when storage is empty (fresh user). Test was updated to reflect actual flow.
+
+**Spec adherence:**
+- §6.5 toast variants: implemented (intro + repeat with different durations + CTAs)
+- §6.6 mounting: portal to body, single mount point
+- §9 placement-agnostic: toast portals to body, doesn't depend on quiz layout
+- §8 failure modes: useEffect wrapped in try/catch; toast renders only when active; timer cleanup on unmount
+
+**Next:** step 6 — HallPanel + MonsterCard + MonsterDetail (~350 lines).
+
+**Time accounting:**
+- Spec §11 estimated step 5 at 130 lines
+- Actual: ~225 (component) + 11 (App.jsx) + 175 (tests) = ~410 lines total
+- Diff explained by: portal complexity, queue logic, animation CSS, comprehensive tests
