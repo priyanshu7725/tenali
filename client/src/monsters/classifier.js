@@ -75,27 +75,34 @@ function isBracketeerSlip(question, userAnswer, correctAnswer) {
   if (typeof question !== 'string') return false;
   const q = question.trim();
 
-  // Match: optional whitespace, leading integer, "(", single letter, "+",
+  // Match: optional whitespace, leading integer, "(", single letter, "+" or "-",
   // integer, ")". Tolerant of spaces inside the bracket.
-  const m = /^\s*(-?\d+)\s*\(\s*([a-zA-Z])\s*\+\s*(-?\d+)\s*\)\s*$/.exec(q);
+  const m = /^\s*(-?\d+)\s*\(\s*([a-zA-Z])\s*([+\-])\s*(-?\d+)\s*\)\s*$/.exec(q);
   if (!m) return false;
 
   const a = parseInt(m[1], 10);
   const varName = m[2];
-  const c = parseInt(m[3], 10);
+  const innerOp = m[3]; // "+" or "-"
+  const c = parseInt(m[4], 10);
 
   // Build the "first term only" expected wrong answer.
-  // Correct:   "aX + a*c"   e.g. "3x + 6"
-  // First-only: "aX + c"    e.g. "3x + 2"
-  // Or:        "aX"          e.g. "3x"  (student dropped the second term entirely)
+  // For  a(b + c)  the correct expansion is aX + a·c. First-only: aX + c.
+  // For  a(b - c)  the correct expansion is aX - a·c. First-only: aX - c.
   const firstTerm = `${a}${varName}`;
-  const firstOnlyForm1 = `${firstTerm} + ${c}`;
-  const firstOnlyForm2 = firstTerm;
-  // Also tolerate negative inner c: e.g. 3(x - 2)  -> 3x - 6; first-only -> 3x - 2
-  const firstOnlyForm3 = `${firstTerm} - ${Math.abs(c)}`;
+  let firstOnlyForm1;
+  let firstOnlyForm2;
+  if (innerOp === '+') {
+    firstOnlyForm1 = `${firstTerm} + ${c}`;
+    firstOnlyForm2 = firstTerm; // dropped the second term entirely
+  } else {
+    // innerOp === '-'. Correct: aX - a·|c|  (a and c signs combined).
+    // First-only: aX - |c|.
+    firstOnlyForm1 = `${firstTerm} - ${Math.abs(c)}`;
+    firstOnlyForm2 = firstTerm;
+  }
 
   const ua = normalizeForStringMatch(userAnswer);
-  return ua === firstOnlyForm1 || ua === firstOnlyForm2 || ua === firstOnlyForm3;
+  return ua === firstOnlyForm1 || ua === firstOnlyForm2;
 }
 
 // ─── Rule: Sign Swapper (§3.2) ──────────────────────────────────────────────
@@ -129,7 +136,9 @@ function isDecimalDrift(question, userAnswer, correctAnswer) {
 
   const ratio = Math.abs(u / c);
   // log10 must be a near-integer; epsilon handles 0.1+0.2-style floats.
-  if (ratio < 0.1) return false;
+  // No lower bound on ratio — the spec example 0.08/0.8 = 0.1 is exactly
+  // at the lower edge (10^-1), so we accept any power of 10.
+  if (ratio <= 0) return false;
   const lg = Math.log10(ratio);
   return Math.abs(lg - Math.round(lg)) < 1e-9;
 }
