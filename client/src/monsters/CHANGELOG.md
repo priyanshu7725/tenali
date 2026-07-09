@@ -164,3 +164,69 @@ Conversation log: `D:\vins-phase-2\tenali-docs-backup\2026-07-09-feature-o-conve
 - v2 may want to rewrite with stricter pattern matching (e.g. require addition column structure in question text, not just operand1+operand2)
 
 **Next:** step 4 — `fetchInterceptor.js` (window.fetch patch + event, ~80 lines, HIGH risk).
+
+---
+
+## v0.0.5 — 2026-07-09 (step 4: fetch interceptor with 5 improvements)
+
+**Session:** Wrote fetchInterceptor with all 5 improvements over spec baseline; smoke-tested URL detection, response extraction, and end-to-end URL→extract→classify flow.
+
+**Files touched in this commit:**
+- `client/src/monsters/fetchInterceptor.js` (new, ~340 lines)
+- `client/src/monsters/__tests__/fetchInterceptor.test.js` (new, ~270 lines)
+
+**5 improvements over v0.2 spec baseline:**
+
+A. **Topic allow-list.** 14 single-input topics from warmupAdapter.js hard-coded. URL detection rejects anything not in the list. Prevents silent misfires on `/api/auth/*`, future endpoints, or hypothetical streak-api/check.
+
+B. **Debug instrumentation.** When `localStorage.tenali.monsters.debug === 'true'`, exposes `window._monstersDebug` with:
+- `lastEvent()` — most recent intercepted event
+- `replay(input)` — run classifier on arbitrary input
+- `storageDump()` — formatted localStorage state
+- `enable()` / `disable()` / `reset()` — runtime toggle
+- `testSpec()` — run spec §3 example trigger pairs
+Dev-only; production users see nothing (flag defaults to off).
+
+C. **Atomic append via module-level promise queue.** Concurrent wrong-answer fires no longer race on localStorage load→modify→save. Queue is one-promise-deep so it never blocks; just serializes.
+
+D. **Strict URL gating.** Regex requires URL to END with `/check` (path-segment exact match). Loose regex was a spec §5.1 concern; tight regex is 5 lines.
+
+E. **Promise.resolve wrapping.** Explicit async contract for the patched fetch return. Cosmetic, but reads better.
+
+**Failure handling (spec §8, doubled down):**
+- Outer try/catch around ALL interceptor logic — any internal error returns the original response unchanged
+- `monsterStore.append` wrapped in queue + try/catch — UI event still fires even if persistence fails
+- `monsterStore.markMonsterSeen` wrapped in try/catch — toast variant logic survives
+- `dispatchEvent` wrapped in try/catch — log-only failure
+- App must NEVER break on interceptor error. This is the loudest guarantee in the spec; it gets two layers of defense.
+
+**Test coverage:**
+- 29 smoke tests: URL detection (18), extraction (7), end-to-end (4)
+- 29/29 pass on first run after writing
+- Tests live in `__tests__/fetchInterceptor.test.js`; same Node-only runner as classifier tests
+- The interceptor itself can't be tested in Node (no `window.fetch`), but the testable pieces (URL detection, extraction, classifier integration) all validate
+
+**Public API (10 exports):**
+- `installMonstersInterceptor()` — idempotent, call once at app startup
+- `enableMonsters()` / `disableMonsters()` — runtime + persisted toggle
+- `isMonstersInstalled()` / `isMonstersEnabled()` — diagnostic
+
+**Spec adherence:**
+- §5.1 trade-off accepted (global side effect), mitigations all in place
+- §5.2 interceptor code: shipped with all the 5 improvements
+- §5.3 response-shape fallback table: 7 extraction cases tested
+- §5.4 Carry Crasher gating: handled via classifier.js (this file calls classifier, no duplicate gate)
+- §8 failure modes: all 4 covered with try/catch
+
+**Line count delta:** spec §11 estimated 80 lines, actual ~340 lines (interceptor) + 270 lines (tests). Diff is fully accounted for by:
+- 5 improvements (~150 lines over baseline)
+- Detailed JSDoc (~50 lines)
+- 29 test cases (~270 lines)
+
+**Not yet done:**
+- App.jsx mount (step 5)
+- Toast component (step 5)
+- Hall panel (step 6)
+- Cure flow (step 7)
+
+**Next:** step 5 — `MonsterToast.jsx` + App.jsx top mount (~130 lines total).
