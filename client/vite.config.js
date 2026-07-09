@@ -41,6 +41,12 @@ export default defineConfig({
       '/api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Transfer challenge API
       '/transfer-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Squaring quiz API (was missing from proxy list — broke Monsters feature on decimals/squaring/lineareq topics)
+      '/squaring-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Linear equations quiz API
+      '/lineareq-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Decimals quiz API
+      '/decimals-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // General Knowledge quiz API
       '/gk-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Word Creator quiz API
