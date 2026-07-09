@@ -77,6 +77,8 @@ import LanguageDashboard from './language/LanguageDashboard'
 import { VOCAB_CORPUS } from './vocabCorpus'
 import PercentExplanationApp from './PercentExplanationApp'
 import { playSound } from './audioContext'
+import { installMonstersInterceptor } from './monsters/fetchInterceptor.js'
+import MonsterToast from './monsters/MonsterToast.jsx'
 
 // API base URL from environment variables (Vite)
 const API = import.meta.env.VITE_API_BASE_URL || '';
@@ -42230,6 +42232,13 @@ function PercentPage(props) {
 }
 
 function App() {
+  // Install monsters interceptor once on mount.
+  // It wraps window.fetch to detect wrong answers and dispatch a CustomEvent
+  // for MonsterToast (and Hall, when added). Spec §5.
+  useEffect(() => {
+    try { installMonstersInterceptor() } catch (_e) { /* never break the app */ }
+  }, [])
+
   // Currently selected quiz mode (null = home menu, or key like 'gk', 'addition', etc.)
   const [mode, setMode] = useState(() => {
     try {
@@ -44134,6 +44143,8 @@ function App() {
         </div>
       )}
       {renderCelebrationModal()}
+      {/* Misconception Monsters — toast overlay, portals to body. Spec §6. */}
+      <MonsterToast />
     </div>
   )
 }
