@@ -42263,11 +42263,16 @@ function App() {
     function onMonsterLogChanged() {
       try { setMonsterLog(loadMonsterLog()) } catch {}
     }
+    function onOpenHall() {
+      setHallOpen(true)
+    }
     window.addEventListener('storage', onStorage)
     window.addEventListener('tenali:monsterLogChanged', onMonsterLogChanged)
+    window.addEventListener('tenali:openHall', onOpenHall)
     return () => {
       window.removeEventListener('storage', onStorage)
       window.removeEventListener('tenali:monsterLogChanged', onMonsterLogChanged)
+      window.removeEventListener('tenali:openHall', onOpenHall)
     }
   }, [])
 
