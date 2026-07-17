@@ -27,7 +27,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getMonsterName, getMonsterTagline } from './monsterExplanations.js';
-import { isMonsterSeen } from './monsterStore.js';
+import { isMonsterSeen, getSlipsSinceLastCure, getMonsterHealedState } from './monsterStore.js';
 import MonsterAvatar from './MonsterAvatar.jsx';
 
 const EVENT_NAME = 'tenali:wrongAnswer';
@@ -67,10 +67,14 @@ function injectToastStyles() {
       cursor: pointer;
       user-select: none;
       animation: monster-toast-slidein 280ms cubic-bezier(0.4, 0, 0.2, 1);
-      transition: opacity ${FADE_OUT_MS}ms ease-out, transform ${FADE_OUT_MS}ms ease-out;
+      transition: opacity ${FADE_OUT_MS}ms ease-out, transform ${FADE_OUT_MS}ms ease-out, border-color 0.2s ease;
       font-family: inherit;
       font-size: 14px;
       line-height: 1.4;
+    }
+    .monster-toast.warning {
+      border-left-color: var(--clr-accent, #e8864a) !important;
+      box-shadow: 0 0 14px var(--clr-accent-soft, rgba(232, 134, 74, 0.22));
     }
     .monster-toast.dismissing {
       opacity: 0;
@@ -89,6 +93,9 @@ function injectToastStyles() {
       font-weight: 600;
       margin-bottom: 2px;
     }
+    .monster-toast.warning .monster-toast-title {
+      color: var(--clr-accent, #e8864a);
+    }
     .monster-toast-tagline {
       font-size: 12px;
       opacity: 0.8;
@@ -103,6 +110,9 @@ function injectToastStyles() {
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
+    }
+    .monster-toast.warning .monster-toast-cta {
+      background: var(--clr-accent, #e8864a);
     }
     .monster-toast-cta:hover {
       opacity: 0.9;
@@ -134,9 +144,8 @@ function injectToastStyles() {
  *   - onTap(): optional callback when user taps the toast (for any other UX)
  */
 export function MonsterToast({ onOpenHall, onTap }) {
-  const [active, setActive] = useState(null);     // { monsterId, topic, ... }
+  const [active, setActive] = useState(null);     // { monsterIds: [...] }
   const [dismissing, setDismissing] = useState(false);
-  const queueRef = useRef([]);
   const timerRef = useRef(null);
 
   // Inject styles once on mount
@@ -144,61 +153,40 @@ export function MonsterToast({ onOpenHall, onTap }) {
     injectToastStyles();
   }, []);
 
-  // Subscribe to wrongAnswer events
+  // Subscribe to sessionSummary events
   useEffect(() => {
     function handle(e) {
       const detail = e.detail || {};
-      if (!detail.monsterId) return;
+      if (!Array.isArray(detail.monsterIds) || detail.monsterIds.length === 0) return;
 
-      // The interceptor snapshots first-encounter state before updating
-      // storage. Manual debug events retain the storage-based fallback.
-      const isIntro = typeof detail.isNew === 'boolean'
-        ? detail.isNew
-        : !isMonsterSeen(detail.monsterId);
-      const next = { ...detail, isIntro };
+      setActive({ monsterIds: detail.monsterIds });
+      setDismissing(false);
 
-      if (active) {
-        // Queue for after current dismisses
-        queueRef.current.push(next);
-        return;
-      }
-
-      showToast(next);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        setDismissing(true);
+        setTimeout(() => {
+          setActive(null);
+          setDismissing(false);
+        }, FADE_OUT_MS);
+      }, 9000);
     }
-    window.addEventListener(EVENT_NAME, handle);
-    return () => window.removeEventListener(EVENT_NAME, handle);
-  }, [active]);
-
-  function showToast(toast) {
-    setActive(toast);
-    setDismissing(false);
-
-    const duration = toast.isIntro ? INTRO_DURATION_MS : REPEAT_DURATION_MS;
-    timerRef.current = setTimeout(() => dismiss(), duration);
-  }
+    window.addEventListener('tenali:sessionSummary', handle);
+    return () => window.removeEventListener('tenali:sessionSummary', handle);
+  }, []);
 
   function dismiss() {
     if (!active) return;
     setDismissing(true);
-
     setTimeout(() => {
       setActive(null);
       setDismissing(false);
-
-      // Show next queued toast, if any
-      const next = queueRef.current.shift();
-      if (next) {
-        showToast(next);
-      }
     }, FADE_OUT_MS);
   }
 
   function handleClick() {
     dismiss();
-    if (active && !active.isIntro) {
-      // Repeat toasts: tap = dismiss only (no Hall CTA shown)
-      onTap && onTap(active);
-    }
+    onTap && onTap(active);
   }
 
   function handleCta(e) {
@@ -216,33 +204,63 @@ export function MonsterToast({ onOpenHall, onTap }) {
 
   if (!active) return null;
 
-  const colors = MONSTER_COLORS[active.monsterId] || MONSTER_COLORS['bracketeer'];
-  const name = getMonsterName(active.monsterId);
-  const tagline = getMonsterTagline(active.monsterId);
-  const titleSuffix = active.isIntro ? 'introduced!' : 'strikes again!';
+  const count = active.monsterIds.length;
+
+  let title = '🚨 Monsters Awoken!';
+  let tagline = count === 1
+    ? `1 misconception monster was triggered during this practice round.`
+    : `${count} misconception monsters were triggered during this practice round.`;
+  let isWarning = false;
+
+  if (count === 1) {
+    const mid = active.monsterIds[0];
+    const name = getMonsterName(mid);
+    const mstate = getMonsterHealedState(mid);
+    if (mstate === 'warning') {
+      title = `⚠️ ${name} is waking up!`;
+      tagline = "Don't slip again, or the cure will break!";
+      isWarning = true;
+    } else {
+      title = `🚨 ${name} breached!`;
+      tagline = "The monster strikes again! Practice to cure it.";
+    }
+  }
 
   const toastEl = (
     <div
-      className={`monster-toast ${dismissing ? 'dismissing' : ''}`}
-      style={{ '--monster-primary': colors.primary, '--monster-secondary': colors.secondary }}
+      className={`monster-toast ${isWarning ? 'warning' : ''} ${dismissing ? 'dismissing' : ''}`}
+      style={{
+        '--monster-primary': isWarning ? 'var(--clr-accent, #e8864a)' : 'var(--clr-accent, #e8864a)',
+        '--monster-secondary': isWarning ? 'var(--clr-accent-soft, rgba(232, 134, 74, 0.22))' : 'var(--clr-accent-soft, rgba(232, 134, 74, 0.22))',
+        minWidth: '320px',
+        padding: '18px 20px',
+      }}
       onClick={handleClick}
       role="status"
       aria-live="polite"
-      data-monster-id={active.monsterId}
-      data-monster-topic={active.topic}
+      data-session-summary-count={count}
     >
-      <div className="monster-toast-row">
-        <MonsterAvatar monsterId={active.monsterId} size={40} healed={false} />
-        <div className="monster-toast-content">
-          <div className="monster-toast-title">{name} {titleSuffix}</div>
-          <div className="monster-toast-tagline">{tagline}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="monster-toast-title" style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: '700', color: isWarning ? 'var(--clr-accent, #e8864a)' : 'var(--clr-accent, #e8864a)' }}>
+          {title}
         </div>
-      </div>
-      {active.isIntro && (
-        <button className="monster-toast-cta" onClick={handleCta}>
-          View Hall →
+        <div className="monster-toast-tagline" style={{ color: 'var(--clr-text-soft, #a89e94)', fontSize: '13px', lineHeight: '1.4' }}>
+          {tagline}
+        </div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', margin: '4px 0' }}>
+          {active.monsterIds.map(mid => {
+            const warningState = getMonsterHealedState(mid);
+            return (
+              <div key={mid} title={getMonsterName(mid)} style={{ background: 'var(--clr-surface, #362f2a)', padding: '6px', borderRadius: '12px', border: '1px solid var(--clr-border, rgba(255,245,230,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MonsterAvatar monsterId={mid} size={38} state={warningState} />
+              </div>
+            );
+          })}
+        </div>
+        <button className="monster-toast-cta" onClick={handleCta} style={{ alignSelf: 'flex-start', marginTop: '4px' }}>
+          Go to Hall →
         </button>
-      )}
+      </div>
     </div>
   );
 

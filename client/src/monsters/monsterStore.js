@@ -250,6 +250,38 @@ export function recordCure(monsterId, result) {
 }
 
 /**
+ * Returns the count of slips (log entries) recorded after the most recent successful cure.
+ */
+export function getSlipsSinceLastCure(monsterId) {
+  const state = load();
+  const cures = Array.isArray(state.cures[monsterId]) ? state.cures[monsterId] : [];
+  const successfulCures = cures.filter(c => c && c.success);
+  if (successfulCures.length === 0) return 0;
+  
+  // Find the timestamp of the latest successful cure
+  const latestCureTime = Math.max(...successfulCures.map(c => c.startedAt));
+  
+  // Count log entries since that cure time
+  return state.log.filter(e => e.monsterId === monsterId && e.timestamp > latestCureTime).length;
+}
+
+/**
+ * Determines the healed state of a monster: 'healed', 'warning' (1 slip), or 'breached' (2+ slips or uncured)
+ */
+export function getMonsterHealedState(monsterId) {
+  const state = load();
+  const cures = Array.isArray(state.cures[monsterId]) ? state.cures[monsterId] : [];
+  const successfulCures = cures.filter(c => c && c.success);
+  if (successfulCures.length === 0) return 'breached';
+
+  const slips = getSlipsSinceLastCure(monsterId);
+  if (slips === 0) return 'healed';
+  if (slips === 1) return 'warning';
+  return 'breached';
+}
+
+
+/**
  * For testing and the future "Reset Hall" admin button.
  * Clears all monster data. Returns true on success.
  */

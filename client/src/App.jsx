@@ -81,7 +81,9 @@ import { installMonstersInterceptor } from './monsters/fetchInterceptor.js'
 import MonsterToast from './monsters/MonsterToast.jsx'
 import HallPanel from './monsters/HallPanel.jsx'
 import CureFlow from './monsters/CureFlow.jsx'
-import { load as loadMonsterLog } from './monsters/monsterStore.js'
+import { load as loadMonsterLog, getMonsterHealedState } from './monsters/monsterStore.js'
+import MonsterAvatar from './monsters/MonsterAvatar.jsx'
+
 
 // API base URL from environment variables (Vite)
 const API = import.meta.env.VITE_API_BASE_URL || '';
@@ -355,6 +357,21 @@ function AuthGate({ children }) {
   )
 }
 
+// Inject version badge into DOM once (appears on all routes)
+; (() => {
+  if (typeof document !== 'undefined' && !document.getElementById('tenali-version')) {
+    const el = document.createElement('div')
+    el.id = 'tenali-version'
+    Object.assign(el.style, {
+      position: 'fixed', top: '8px', right: '12px', zIndex: '9999',
+      fontSize: '0.65rem', opacity: '0.55', pointerEvents: 'none',
+      textAlign: 'right', lineHeight: '1.4', fontFamily: 'system-ui, sans-serif',
+      color: 'var(--clr-text-soft)',
+    })
+    el.innerHTML = `<div>v${TENALI_VERSION}</div><div>${TENALI_BUILD_DATE}</div>`
+    document.body.appendChild(el)
+  }
+})()
 // Default number of questions for quizzes
 const DEFAULT_TOTAL = 20
 // Delay before auto-advancing to next question after correct answer (ms)
@@ -42235,6 +42252,16 @@ function PercentPage(props) {
 }
 
 function App() {
+  // Currently selected quiz mode (null = home menu, or key like 'gk', 'addition', etc.)
+  const [mode, setMode] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('mode') || null;
+    } catch {
+      return null;
+    }
+  })
+
   // Install monsters interceptor once on mount.
   // It wraps window.fetch to detect wrong answers and dispatch a CustomEvent
   // for MonsterToast (and Hall, when added). Spec §5.
@@ -42250,6 +42277,52 @@ function App() {
   })
   const [hallOpen, setHallOpen] = useState(false)
   const [activeCure, setActiveCure] = useState(null)
+  const [activeInterruption, setActiveInterruption] = useState(null)
+
+  // Track monsters triggered during the active play session
+  const sessionMonstersRef = useRef(new Set())
+  const previousModeRef = useRef(null)
+
+  // Dispatch session summary when returning to menu from active quiz
+  useEffect(() => {
+    if (previousModeRef.current && !mode) {
+      if (sessionMonstersRef.current.size > 0) {
+        const monsterIds = Array.from(sessionMonstersRef.current)
+        window.dispatchEvent(new CustomEvent('tenali:sessionSummary', {
+          detail: { monsterIds }
+        }))
+      }
+    }
+    if (mode) {
+      sessionMonstersRef.current.clear()
+    }
+    previousModeRef.current = mode
+  }, [mode])
+
+  // Listen to wrong answer events for inline card interruptions and session tracking
+  useEffect(() => {
+    function handle(e) {
+      const detail = e.detail || {}
+      if (!detail.monsterId) return
+
+      // Track this trigger for the post-game summary
+      sessionMonstersRef.current.add(detail.monsterId)
+
+      const healedState = getMonsterHealedState(detail.monsterId)
+      setActiveInterruption({
+        monsterId: detail.monsterId,
+        state: healedState,
+        isIntro: detail.isNew === true
+      })
+
+      setTimeout(() => {
+        setActiveInterruption(null)
+      }, 2500)
+    }
+    window.addEventListener('tenali:wrongAnswer', handle)
+    return () => window.removeEventListener('tenali:wrongAnswer', handle)
+  }, [])
+
 
   // Keep monsterLog in sync with localStorage. The fetchInterceptor's
   // monsterStore.append() writes to localStorage; we re-hydrate when the
@@ -42277,16 +42350,6 @@ function App() {
       window.removeEventListener('tenali:openHall', onOpenHall)
     }
   }, [])
-
-  // Currently selected quiz mode (null = home menu, or key like 'gk', 'addition', etc.)
-  const [mode, setMode] = useState(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('mode') || null;
-    } catch {
-      return null;
-    }
-  })
 
   // Synchronize browser URL query parameters dynamically with the active mode state
   useEffect(() => {
@@ -42632,7 +42695,6 @@ function App() {
       delete window.tenaliIncrementSolved;
     };
   }, [completedTopics, goldMastery, coins, totalSolved, mode]);
-
 
   // Current theme: 'dark' or 'light'
   // Initialized from localStorage with fallback to 'dark'
@@ -44176,6 +44238,50 @@ function App() {
       <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
         {theme === 'dark' ? '☀️' : '🌙'}
       </button>
+      <style>{`
+        .monster-interruption-popup {
+          position: fixed;
+          bottom: 24px;
+          left: 24px;
+          z-index: 1000000;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          pointer-events: none;
+          animation: inline-slide-wobble 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .monster-interruption-bubble {
+          background: var(--clr-card, #2c2622);
+          color: var(--clr-text, #ede8e3);
+          border: 1.5px solid var(--clr-border, rgba(255,245,230,0.18));
+          border-radius: 12px;
+          padding: 8px 12px;
+          font-size: 12px;
+          font-weight: 700;
+          margin-top: 6px;
+          box-shadow: var(--shadow-card);
+          white-space: nowrap;
+        }
+        @keyframes inline-slide-wobble {
+          0% { transform: translateY(60px) scale(0.5); opacity: 0; }
+          70% { transform: translateY(-5px) scale(1.05); opacity: 0.9; }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      {activeInterruption && (
+        <div className="monster-interruption-popup">
+          <MonsterAvatar monsterId={activeInterruption.monsterId} size={90} state={activeInterruption.state} />
+          <div className="monster-interruption-bubble">
+            {activeInterruption.isIntro
+              ? 'A new monster has breached!'
+              : activeInterruption.state === 'warning'
+                ? '⚠️ Grrr... I am stirring!'
+                : 'Struck again!'}
+          </div>
+        </div>
+      )}
+
       {mode === 'vachana' ? (
         <Vachana onBack={() => setMode(null)} />
       ) : (
@@ -44460,6 +44566,16 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
                 <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--clr-text-soft)', marginTop: '2px' }}>{app.subtitle}</span>
               </button>
             ))}
+            <div style={{ height: '1px', background: 'var(--clr-border)', margin: '4px 0' }} />
+            <button onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('tenali:openHall')) }} style={{
+              display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px',
+              background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text)',
+              fontFamily: 'var(--font-body)', fontSize: '0.95rem', transition: 'background var(--transition)'
+            }} onMouseEnter={e => e.target.style.background = 'var(--clr-hover-strong)'}
+              onMouseLeave={e => e.target.style.background = 'none'}>
+              <strong style={{ color: 'var(--clr-accent)' }}>{'\uD83D\uDC7E'} Hall of Silly Mistakes</strong>
+              <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--clr-text-soft)', marginTop: '2px' }}>Review your misconception monsters</span>
+            </button>
           </div>}
         </div>
       </div>

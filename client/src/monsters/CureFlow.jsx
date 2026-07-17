@@ -47,16 +47,41 @@ function historyQuestions(monsterId, topic) {
     }));
 }
 
-async function fetchFallbackQuestion(topic, index) {
-  const response = await fetch(`${API_BASE}/${topic}-api/question?difficulty=easy`);
-  if (!response.ok) throw new Error(`Question endpoint returned ${response.status}`);
-  const question = await response.json();
-  const prompt = question.prompt ?? question.question ?? '';
-  const correctAnswer = question.answer ?? question.correctAnswer ?? question.display;
-  if (!prompt || correctAnswer == null || correctAnswer === '') {
-    throw new Error('Question response lacks a usable prompt or answer');
-  }
-  return { id: question.id || `fallback-${index}`, prompt, correctAnswer };
+const HARDCODED_FALLBACKS = {
+  'bracketeer': [
+    { prompt: 'Expand: 2(x + 3)', correctAnswer: '2x + 6' },
+    { prompt: 'Expand: 4(2x - 5)', correctAnswer: '8x - 20' },
+    { prompt: 'Expand: 3(3y + 4)', correctAnswer: '9y + 12' },
+    { prompt: 'Expand: 5(x - 2)', correctAnswer: '5x - 10' },
+    { prompt: 'Expand: 6(2z + 1)', correctAnswer: '12z + 6' }
+  ],
+  'sign-swapper': [
+    { prompt: 'Calculate: -4 * -3', correctAnswer: '12' },
+    { prompt: 'Expand: -(x - 5)', correctAnswer: '-x + 5' },
+    { prompt: 'Calculate: -7 * -2', correctAnswer: '14' },
+    { prompt: 'Expand: -3(x - 4)', correctAnswer: '-3x + 12' },
+    { prompt: 'Expand: -(2x + 1)', correctAnswer: '-2x - 1' }
+  ],
+  'decimal-drifter': [
+    { prompt: 'Calculate: 0.3 * 0.4', correctAnswer: '0.12' },
+    { prompt: 'Calculate: 0.2 * 0.5', correctAnswer: '0.1' },
+    { prompt: 'Calculate: 0.06 * 10', correctAnswer: '0.6' },
+    { prompt: 'Calculate: 0.8 / 0.2', correctAnswer: '4' },
+    { prompt: 'Calculate: 0.7 * 0.03', correctAnswer: '0.021' }
+  ],
+  'carry-crasher': [
+    { prompt: 'Calculate: 37 + 15', correctAnswer: '52' },
+    { prompt: 'Calculate: 48 + 9', correctAnswer: '57' },
+    { prompt: 'Calculate: 65 + 28', correctAnswer: '93' },
+    { prompt: 'Calculate: 79 + 6', correctAnswer: '85' },
+    { prompt: 'Calculate: 56 + 17', correctAnswer: '73' }
+  ]
+};
+
+function getHardcodedFallbackQuestion(monsterId, index) {
+  const list = HARDCODED_FALLBACKS[monsterId] || HARDCODED_FALLBACKS['bracketeer'];
+  const q = list[index % list.length];
+  return { id: `fallback-${monsterId}-${index}`, prompt: q.prompt, correctAnswer: q.correctAnswer };
 }
 
 function injectStyles() {
@@ -144,6 +169,42 @@ function injectStyles() {
       50% { transform: scale(1.3); opacity: 0.8; }
       100% { transform: scale(1.6); opacity: 0; }
     }
+    
+    /* SHIELD & HEALING PARTICLES */
+    .cure-shield-ring {
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      border: 3px solid #5cb87a;
+      border-radius: 50%;
+      top: 30px;
+      transform: scale(0);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9;
+      box-shadow: 0 0 15px rgba(92, 184, 122, 0.6);
+    }
+    .cure-shield-ring.shield-animate {
+      animation: shield-expand 1.1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    }
+    @keyframes shield-expand {
+      0% { transform: scale(0.3); opacity: 1; }
+      100% { transform: scale(2.5); opacity: 0; border-width: 1px; }
+    }
+    
+    .cure-particle {
+      position: fixed;
+      pointer-events: none;
+      font-size: 22px;
+      z-index: 10008;
+      animation: explode-particle 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    }
+    @keyframes explode-particle {
+      to {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) rotate(270deg) scale(0.4);
+      }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -162,44 +223,40 @@ export function CureFlow({ monsterId, topic, onComplete, onCancel }) {
 
   useEffect(() => {
     injectStyles();
-    let cancelled = false;
-    async function prepare() {
-      const prepared = historyQuestions(monsterId, topic);
-      for (let i = prepared.length; i < QUESTION_COUNT; i += 1) {
-        try { prepared.push(await fetchFallbackQuestion(topic, i)); }
-        catch (err) { console.warn('[monsters] cure fallback question failed:', err.message); break; }
-      }
-      while (prepared.length < QUESTION_COUNT && prepared.length > 0) {
-        prepared.push({ ...prepared[0], id: `repeat-${prepared.length}` });
-      }
-      if (cancelled) return;
-      if (prepared.length < QUESTION_COUNT) setError('Not enough questions are available for this cure yet.');
-      else setQuestions(prepared.slice(0, QUESTION_COUNT));
-      setLoading(false);
+    const prepared = historyQuestions(monsterId, topic);
+    for (let i = prepared.length; i < QUESTION_COUNT; i += 1) {
+      prepared.push(getHardcodedFallbackQuestion(monsterId, i));
     }
-    prepare();
-    return () => { cancelled = true; };
+    while (prepared.length < QUESTION_COUNT && prepared.length > 0) {
+      prepared.push({ ...prepared[0], id: `repeat-${prepared.length}` });
+    }
+    if (prepared.length < QUESTION_COUNT) {
+      setError('Not enough questions are available for this cure yet.');
+    } else {
+      setQuestions(prepared.slice(0, QUESTION_COUNT));
+    }
+    setLoading(false);
   }, [monsterId, topic]);
 
   // Spark Celebration Trigger
   useEffect(() => {
     if (finished && correctCount >= REQUIRED_CORRECT) {
       setPoofActive(true);
-      setTimeout(() => setPoofActive(false), 500);
+      setTimeout(() => setPoofActive(false), 1100);
 
-      // Trigger operators explosion
-      const chars = ['+', '-', 'x', '÷', '★', '✨', '✔'];
-      const colors = ['#ffd700', '#5cb87a', '#e8864a', '#fff'];
+      // Trigger themed healing explosion
+      const chars = ['❤️', '🧪', '✨', '🟢', '🟡', '🛡️'];
+      const colors = ['#5cb87a', '#ffd700', '#ff6b6b', '#fff'];
 
       // Particle explosion from the center card
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 45; i++) {
         const p = document.createElement('div');
         p.className = 'cure-particle';
         p.innerText = chars[Math.floor(Math.random() * chars.length)];
         p.style.color = colors[Math.floor(Math.random() * colors.length)];
         
         const angle = Math.random() * Math.PI * 2;
-        const dist = 80 + Math.random() * 180;
+        const dist = 80 + Math.random() * 200;
         const tx = Math.cos(angle) * dist;
         const ty = Math.sin(angle) * dist;
         
@@ -233,9 +290,10 @@ export function CureFlow({ monsterId, topic, onComplete, onCancel }) {
       return;
     }
     const success = correctCount >= REQUIRED_CORRECT;
-    recordCure(monsterId, { startedAt, success, correctCount });
+    recordCure(monsterId, { startedAt: Date.now(), success, correctCount });
     setFinished(true);
   }
+
 
   function closeResult() {
     onComplete && onComplete({ success: correctCount >= REQUIRED_CORRECT, correctCount });
@@ -245,12 +303,13 @@ export function CureFlow({ monsterId, topic, onComplete, onCancel }) {
     <div className="monster-cure-backdrop" role="dialog" aria-modal="true" aria-label="Monster cure">
       <div className="monster-cure-card">
         <div className={`cure-poof-cloud ${poofActive ? 'poof-animate' : ''}`} />
+        <div className={`cure-shield-ring ${poofActive ? 'shield-animate' : ''}`} />
         
         {/* Render Monster Avatar. Turns healed only on successful finished view */}
         <MonsterAvatar
           monsterId={monsterId}
           size={90}
-          healed={finished && correctCount >= REQUIRED_CORRECT}
+          state={finished && correctCount >= REQUIRED_CORRECT ? 'healed' : 'breached'}
           style={{ marginBottom: '16px' }}
         />
 

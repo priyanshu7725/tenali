@@ -56,7 +56,7 @@ function injectCardStyles() {
       border: 1px solid var(--clr-border, rgba(255,245,230,0.18));
       border-radius: var(--radius-sm, 10px);
       cursor: pointer;
-      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
       text-align: left;
       font-family: inherit;
       color: inherit;
@@ -66,6 +66,15 @@ function injectCardStyles() {
       transform: translateY(-2px);
       background: var(--clr-hover-strong, rgba(255,245,230,0.08));
       border-color: var(--monster-primary, #5b8def);
+    }
+    .monster-card.warning {
+      border-color: var(--clr-accent, #e8864a) !important;
+      box-shadow: 0 0 10px var(--clr-accent-soft, rgba(232, 134, 74, 0.22)) !important;
+      animation: alert-border-pulse 1.5s infinite alternate ease-in-out;
+    }
+    @keyframes alert-border-pulse {
+      0% { box-shadow: 0 0 4px var(--clr-accent-soft); }
+      100% { box-shadow: 0 0 12px var(--clr-accent-soft); }
     }
     .monster-card:focus-visible {
       outline: 2px solid var(--monster-primary, #5b8def);
@@ -129,6 +138,7 @@ function injectCardStyles() {
 }
 
 import MonsterAvatar from './MonsterAvatar.jsx';
+import { getMonsterHealedState } from './monsterStore.js';
 
 export function MonsterCard({ monsterId, seen, breachCount, lastAttempt, cureHistory, onClick }) {
   // Inject styles once on first render
@@ -137,7 +147,7 @@ export function MonsterCard({ monsterId, seen, breachCount, lastAttempt, cureHis
   const colors = MONSTER_COLORS[monsterId] || MONSTER_COLORS['bracketeer'];
   const name = getMonsterName(monsterId);
   const curesSuccessful = Array.isArray(cureHistory) ? cureHistory.filter(c => c && c.success).length : 0;
-  const isHealed = seen && curesSuccessful > 0;
+  const healedState = seen ? getMonsterHealedState(monsterId) : 'breached';
 
   const meta = seen
     ? `Breached ${breachCount} time${breachCount === 1 ? '' : 's'} · last ${formatRelativeTime(lastAttempt)}`
@@ -145,14 +155,14 @@ export function MonsterCard({ monsterId, seen, breachCount, lastAttempt, cureHis
 
   return (
     <button
-      className={`monster-card ${seen ? '' : 'unseen'}`}
+      className={`monster-card ${seen ? '' : 'unseen'} ${healedState === 'warning' ? 'warning' : ''}`}
       style={{ '--monster-primary': colors.primary, '--monster-secondary': colors.secondary }}
       onClick={seen ? onClick : undefined}
       disabled={!seen}
       aria-label={seen ? `Open details for ${name}` : `${name} not yet met`}
     >
       {seen ? (
-        <MonsterAvatar monsterId={monsterId} size={56} healed={isHealed} />
+        <MonsterAvatar monsterId={monsterId} size={56} state={healedState} />
       ) : (
         <div className="monster-card-blob" aria-hidden="true">❓</div>
       )}

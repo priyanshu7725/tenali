@@ -71,6 +71,14 @@ function injectDetailStyles() {
       border-radius: 12px;
       border-left: 4px solid var(--monster-primary, #5b8def);
     }
+    .monster-detail-hero.warning {
+      border-left-color: var(--clr-accent, #e8864a) !important;
+      background: linear-gradient(135deg, rgba(232, 134, 74, 0.12), rgba(232, 134, 74, 0.04)) !important;
+    }
+    .monster-detail-hero.healed {
+      border-left-color: #ffd700 !important;
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(255, 215, 0, 0.04)) !important;
+    }
     .monster-detail-blob {
       width: 80px;
       height: 80px;
@@ -116,6 +124,12 @@ function injectDetailStyles() {
       font-weight: 700;
       color: var(--monster-primary, #5b8def);
       display: block;
+    }
+    .monster-detail-hero.healed .monster-detail-stat-value {
+      color: #ffd700;
+    }
+    .monster-detail-hero.warning .monster-detail-stat-value {
+      color: var(--clr-accent, #e8864a);
     }
     .monster-detail-stat-label {
       font-size: 11px;
@@ -164,6 +178,14 @@ function injectDetailStyles() {
     }
     .monster-detail-btn-primary {
       background: var(--monster-primary, #5b8def);
+      color: white;
+    }
+    .monster-detail-hero.healed ~ .monster-detail-actions .monster-detail-btn-primary {
+      background: #ffd700;
+      color: #1a1614;
+    }
+    .monster-detail-hero.warning ~ .monster-detail-actions .monster-detail-btn-primary {
+      background: var(--clr-accent, #e8864a);
       color: white;
     }
     .monster-detail-btn-primary:hover {
@@ -237,6 +259,7 @@ function getAllTopics(monsterId) {
 }
 
 import MonsterAvatar from './MonsterAvatar.jsx';
+import { getMonsterHealedState } from './monsterStore.js';
 
 export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory, onBack, onStartCure }) {
   // Inject styles once
@@ -262,7 +285,7 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
 
   const curesTotal = Array.isArray(cureHistory) ? cureHistory.length : 0;
   const curesSuccessful = Array.isArray(cureHistory) ? cureHistory.filter(c => c && c.success).length : 0;
-  const isHealed = curesSuccessful > 0;
+  const healedState = getMonsterHealedState(monsterId);
 
   function handleStart() {
     if (!topic) return;
@@ -271,8 +294,8 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
 
   return (
     <div className="monster-detail" data-monster-id={monsterId}>
-      <div className="monster-detail-hero" style={{ '--monster-primary': colors.primary, '--monster-secondary': colors.secondary }}>
-        <MonsterAvatar monsterId={monsterId} size={80} healed={isHealed} />
+      <div className={`monster-detail-hero ${healedState}`} style={{ '--monster-primary': colors.primary, '--monster-secondary': colors.secondary }}>
+        <MonsterAvatar monsterId={monsterId} size={80} state={healedState} />
         <div>
           <h2 className="monster-detail-name" style={{ fontFamily: 'var(--font-display)' }}>{entry.name}</h2>
           <p className="monster-detail-tagline">{entry.tagline}</p>
@@ -281,18 +304,19 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
 
       <div className="monster-detail-stats">
         <div className="monster-detail-stat">
-          <span className="monster-detail-stat-value">{breachCount}</span>
+          <span className="monster-detail-stat-value" style={healedState === 'healed' ? {color:'#ffd700'} : healedState === 'warning' ? {color:'var(--clr-accent)'} : {}}>{breachCount}</span>
           <span className="monster-detail-stat-label">Breaches</span>
         </div>
         <div className="monster-detail-stat">
-          <span className="monster-detail-stat-value">{formatRelativeTime(lastAttempt)}</span>
+          <span className="monster-detail-stat-value" style={healedState === 'healed' ? {color:'#ffd700'} : healedState === 'warning' ? {color:'var(--clr-accent)'} : {}}>{formatRelativeTime(lastAttempt)}</span>
           <span className="monster-detail-stat-label">Last Seen</span>
         </div>
         <div className="monster-detail-stat">
-          <span className="monster-detail-stat-value">{curesSuccessful}/{curesTotal}</span>
+          <span className="monster-detail-stat-value" style={healedState === 'healed' ? {color:'#ffd700'} : healedState === 'warning' ? {color:'var(--clr-accent)'} : {}}>{curesSuccessful}/{curesTotal}</span>
           <span className="monster-detail-stat-label">Cures</span>
         </div>
       </div>
+
 
       <div className="monster-detail-section">
         <h3 style={{ fontFamily: 'var(--font-display)' }}>What it does</h3>

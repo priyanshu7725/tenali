@@ -1,23 +1,10 @@
-/**
- * MonsterAvatar.jsx
- *
- * A reusable component that renders clean, beautifully animated vector SVG illustrations
- * for each of the 4 misconception monsters.
- *
- * Animations:
- *   - Wobbling/breathing body shapes
- *   - Blinking eyes (including asynchronous blink rates)
- *   - Orbiting mathematical elements (brackets, signs, sliding decimal points)
- *   - "Healed" state visual upgrade (golden gradient, smiley eyes, halo overlay)
- */
-
 import { useEffect } from 'react';
 
 const MONSTER_AVATARS = {
   'bracketeer': {
     gradId: 'bracketeer-grad',
     stop0: '#73a2ff', stop70: '#3a6fce', stop100: '#214fa3',
-    svg: (healed) => (
+    svg: (state) => (
       <>
         {/* Orbiting Brackets */}
         <g className="orbit-bracket">
@@ -28,18 +15,25 @@ const MONSTER_AVATARS = {
         <path
           className="bracketeer-body"
           d="M22,50 C12,25 32,18 50,18 C68,18 88,25 78,50 C88,75 68,82 50,82 C32,82 12,75 22,50 Z"
-          fill={healed ? 'url(#healed-grad)' : 'url(#bracketeer-grad)'}
+          fill={state === 'healed' ? 'url(#healed-grad)' : 'url(#bracketeer-grad)'}
         />
         {/* Expressions */}
-        {!healed ? (
+        {state === 'healed' ? (
+          <path className="happy-expression" d="M 28 46 Q 33 40 38 46 M 62 46 Q 67 40 72 46 M 44 56 Q 50 63 56 56" />
+        ) : state === 'warning' ? (
+          <>
+            {/* Suspicious warning eyes */}
+            <path d="M26,45 L40,45" stroke="#1a1614" strokeWidth="3" strokeLinecap="round" />
+            <path d="M60,45 L74,45" stroke="#1a1614" strokeWidth="3" strokeLinecap="round" />
+            <ellipse cx="50" cy="58" rx="4" ry="4" fill="#1a1614" />
+          </>
+        ) : (
           <>
             <g className="eye-left"><circle cx="33" cy="45" r="5" fill="#fff" /><circle cx="33" cy="44" r="2.5" fill="#1a1614" /></g>
             <g className="eye-middle"><circle cx="50" cy="38" r="6" fill="#fff" /><circle cx="50" cy="37" r="3" fill="#1a1614" /></g>
             <g className="eye-right"><circle cx="67" cy="45" r="5" fill="#fff" /><circle cx="67" cy="44" r="2.5" fill="#1a1614" /></g>
             <ellipse cx="50" cy="58" rx="4" ry="6" fill="#1a1614" />
           </>
-        ) : (
-          <path className="happy-expression" d="M 28 46 Q 33 40 38 46 M 62 46 Q 67 40 72 46 M 44 56 Q 50 63 56 56" />
         )}
       </>
     )
@@ -47,7 +41,7 @@ const MONSTER_AVATARS = {
   'sign-swapper': {
     gradId: 'swapper-grad',
     stop0: '#ff7b7b', stop70: '#ce3a3a', stop100: '#9a1d1d',
-    svg: (healed) => (
+    svg: (state) => (
       <>
         {/* Floating signs */}
         <g className="float-sign-pos"><text x="15" y="25" fill="currentColor" fontSize="18" fontWeight="bold" className="avatar-symbol">+</text></g>
@@ -56,17 +50,23 @@ const MONSTER_AVATARS = {
         <path
           className="swapper-body"
           d="M50,15 L58,35 L78,30 L68,48 L85,60 L63,65 L70,85 L50,72 L30,85 L37,65 L15,60 L32,48 L22,30 L42,35 Z"
-          fill={healed ? 'url(#healed-grad)' : 'url(#swapper-grad)'}
+          fill={state === 'healed' ? 'url(#healed-grad)' : 'url(#swapper-grad)'}
         />
         {/* Expressions */}
-        {!healed ? (
+        {state === 'healed' ? (
+          <path className="happy-expression" d="M 33 46 Q 38 41 43 46 M 57 46 Q 62 41 67 46 M 45 58 Q 50 63 55 58" />
+        ) : state === 'warning' ? (
+          <>
+            <path d="M30,48 Q40,46 45,52" fill="none" stroke="#1a1614" strokeWidth="3" strokeLinecap="round" />
+            <path d="M70,48 Q60,46 55,52" fill="none" stroke="#1a1614" strokeWidth="3" strokeLinecap="round" />
+            <path d="M43,60 Q50,62 57,60" fill="none" stroke="#1a1614" strokeWidth="2.5" />
+          </>
+        ) : (
           <>
             <g className="angry-eye-left"><circle cx="38" cy="47" r="5.5" fill="#fff" /><circle cx="39" cy="47" r="3" fill="#1a1614" /><path d="M28,39 L40,45" stroke="#ff7b7b" strokeWidth="2" /></g>
             <g className="angry-eye-right"><circle cx="62" cy="47" r="5.5" fill="#fff" /><circle cx="61" cy="47" r="3" fill="#1a1614" /><path d="M72,39 L60,45" stroke="#ff7b7b" strokeWidth="2" /></g>
-            <path d="M43,58 Q46,62 50,58 T57,58" fill="none" stroke="#1a1614" strokeWidth="2.5" />
+            <path d="M43,58 Q46,62 50,58 T57,58" fill="none" stroke="#1a1614" stroke-width="2.5" />
           </>
-        ) : (
-          <path className="happy-expression" d="M 33 46 Q 38 41 43 46 M 57 46 Q 62 41 67 46 M 45 58 Q 50 63 55 58" />
         )}
       </>
     )
@@ -74,22 +74,28 @@ const MONSTER_AVATARS = {
   'decimal-drifter': {
     gradId: 'drifter-grad',
     stop0: '#ffbf5b', stop70: '#c78700', stop100: '#936000',
-    svg: (healed) => (
+    svg: (state) => (
       <>
         {/* Floating body */}
         <path
           className="drifter-body"
           d="M20,50 C10,25 35,15 50,20 C65,25 90,15 80,50 C90,85 65,75 50,80 C35,85 10,85 20,50 Z"
-          fill={healed ? 'url(#healed-grad)' : 'url(#drifter-grad)'}
+          fill={state === 'healed' ? 'url(#healed-grad)' : 'url(#drifter-grad)'}
         />
         {/* Expression */}
-        {!healed ? (
+        {state === 'healed' ? (
+          <path className="happy-expression" d="M 43 44 Q 50 38 57 44 M 45 56 Q 50 62 55 56" />
+        ) : state === 'warning' ? (
           <>
-            <g className="cyclops-eye"><circle cx="50" cy="44" r="9" fill="#fff" /><circle cx="50" cy="44" r="4.5" fill="#1a1614" /></g>
+            <path d="M40,45 Q50,48 60,45" fill="none" stroke="#1a1614" strokeWidth="3" strokeLinecap="round" />
+            <circle cx="50" cy="48" r="2.5" fill="#1a1614" />
             <circle class="drifting-point" cx="50" cy="62" r="3.5" fill="#ffbf5b" />
           </>
         ) : (
-          <path className="happy-expression" d="M 43 44 Q 50 38 57 44 M 45 56 Q 50 62 55 56" />
+          <>
+            <g className="cyclops-eye"><circle cx="50" cy="44" r="9" fill="#fff" /><circle cx="50" cy="44" r="4.5" fill="#1a1614" /></g>
+            <circle className="drifting-point" cx="50" cy="62" r="3.5" fill="#ffbf5b" />
+          </>
         )}
       </>
     )
@@ -97,7 +103,7 @@ const MONSTER_AVATARS = {
   'carry-crasher': {
     gradId: 'crasher-grad',
     stop0: '#c98cff', stop70: '#7d3fa0', stop100: '#552170',
-    svg: (healed) => (
+    svg: (state) => (
       <>
         {/* Particles */}
         <circle className="crumble-particle" cx="50" cy="50" r="2" fill="#d09eff" style={{ '--dx': '-30px', '--dy': '0px', '--tx': '-10px', animationDelay: '0s' }} />
@@ -106,18 +112,25 @@ const MONSTER_AVATARS = {
         <path
           className="crasher-body"
           d="M30,22 C42,16 60,18 72,25 C84,32 88,48 82,66 C76,82 58,84 42,80 C26,76 16,60 20,42 C22,28 20,26 30,22 Z"
-          fill={healed ? 'url(#healed-grad)' : 'url(#crasher-grad)'}
+          fill={state === 'healed' ? 'url(#healed-grad)' : 'url(#crasher-grad)'}
         />
         {/* Expressions */}
-        {!healed ? (
+        {state === 'healed' ? (
+          <path className="happy-expression" d="M 31 46 Q 36 41 41 46 M 59 46 Q 64 41 69 46 M 45 60 Q 50 65 55 60" />
+        ) : state === 'warning' ? (
+          <>
+            <path className="crasher-cracks" d="M35,32 L48,42 L42,55" />
+            <path d="M28,45 L40,47" stroke="#1a1614" strokeWidth="3" strokeLinecap="round" />
+            <path d="M72,45 L60,47" stroke="#1a1614" strokeWidth="3" strokeLinecap="round" />
+            <path d="M44,60 Q50,62 56,60" fill="none" stroke="#1a1614" strokeWidth="2.5" />
+          </>
+        ) : (
           <>
             <path className="crasher-cracks" d="M35,32 L48,42 L42,55 M65,70 L58,58 L68,50" />
             <g className="crasher-eye-l"><circle cx="36" cy="46" r="6" fill="#fff" /><circle cx="36" cy="46" r="3" fill="#1a1614" /></g>
             <g className="crasher-eye-r"><circle cx="64" cy="46" r="6" fill="#fff" /><circle cx="64" cy="46" r="3" fill="#1a1614" /></g>
             <path d="M42,62 L58,62" stroke="#1a1614" strokeWidth="2" />
           </>
-        ) : (
-          <path className="happy-expression" d="M 31 46 Q 36 41 41 46 M 59 46 Q 64 41 69 46 M 45 60 Q 50 65 55 60" />
         )}
       </>
     )
@@ -141,8 +154,19 @@ function injectStyles() {
     }
     .monster-avatar-wrapper.healed .avatar-halo { transform: translateX(-50%) scale(1); opacity: 1; top: -5%; }
     
+    /* WARNING SHIVER */
+    .monster-avatar-wrapper.warning {
+      animation: warning-shiver 0.3s infinite alternate ease-in-out;
+      filter: drop-shadow(0 0 4px #e8864a);
+    }
+    @keyframes warning-shiver {
+      0% { transform: translate(-1px, 1px) rotate(-1deg); }
+      100% { transform: translate(1px, -1px) rotate(1deg); }
+    }
+
     /* SYMBOLS COLOR */
     .monster-avatar-wrapper.healed .avatar-symbol { color: #ffd700; }
+    .monster-avatar-wrapper.warning .avatar-symbol { color: #e8864a; }
 
     /* CORE SHAPES & TIMINGS */
     .bracketeer-body { transform-origin: center; animation: float-organic 4s ease-in-out infinite; transition: fill 0.5s ease; }
@@ -231,7 +255,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-export function MonsterAvatar({ monsterId, size = 80, healed = false, className = '' }) {
+export function MonsterAvatar({ monsterId, size = 80, state = 'breached', className = '' }) {
   useEffect(() => {
     injectStyles();
   }, []);
@@ -240,7 +264,7 @@ export function MonsterAvatar({ monsterId, size = 80, healed = false, className 
 
   return (
     <div
-      className={`monster-avatar-wrapper ${healed ? 'healed' : ''} ${className}`}
+      className={`monster-avatar-wrapper ${state} ${className}`}
       style={{ width: `${size}px`, height: `${size}px` }}
     >
       <div className="avatar-halo" />
@@ -256,7 +280,7 @@ export function MonsterAvatar({ monsterId, size = 80, healed = false, className 
             <stop offset="100%" stopColor="#e2b100" />
           </radialGradient>
         </defs>
-        {config.svg(healed)}
+        {config.svg(state)}
       </svg>
     </div>
   );

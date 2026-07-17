@@ -330,15 +330,20 @@ function installActiveInterceptor() {
           timestamp: Date.now(),
         };
 
-        // Persist (queued, so concurrent fires serialize)
-        enqueueAppend({
-          monsterId,
-          topic,
-          question: normalized.question,
-          wrongAnswer: normalized.userAnswer,
-          correctAnswer: normalized.correctAnswer,
-          timestamp: eventDetail.timestamp,
-        });
+        // Persist synchronously so the UI event handler reads the updated state immediately
+        try {
+          const ok = monsterStore.append({
+            monsterId,
+            topic,
+            question: normalized.question,
+            wrongAnswer: normalized.userAnswer,
+            correctAnswer: normalized.correctAnswer,
+            timestamp: eventDetail.timestamp,
+          });
+          if (ok) notifyMonsterLogChanged();
+        } catch (e) {
+          console.warn('[monsters] append failed:', e.message);
+        }
 
         // Track for debug
         _lastEvent = eventDetail;
