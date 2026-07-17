@@ -34,7 +34,7 @@
  *  - Call once at app startup (e.g. from App.jsx top or main.jsx).
  */
 
-import { classifyMonster } from './classifier.js';
+import { classifyMonster, MONSTER_IDS } from './classifier.js';
 import * as monsterStore from './monsterStore.js';
 
 // ─── Configuration ───────────────────────────────────────────────────────────
@@ -64,6 +64,13 @@ const ALLOWED_TOPICS = new Set([
 const EVENT_NAME = 'tenali:wrongAnswer';
 const DEBUG_FLAG_KEY = 'tenali.monsters.debug';
 const ENABLE_FLAG_KEY = 'tenali.monsters.enabled';
+
+const DEBUG_FIXTURES = {
+  'bracketeer': { topic: 'basicarith', question: '3(x+2)', userAnswer: '3x + 2', correctAnswer: '3x + 6' },
+  'sign-swapper': { topic: 'basicarith', question: '(-3) + 5', userAnswer: '-2', correctAnswer: '2' },
+  'decimal-drifter': { topic: 'decimals', question: '0.5 + 0.3', userAnswer: '0.08', correctAnswer: '0.8' },
+  'carry-crasher': { topic: 'addition', question: '47 + 38', userAnswer: '75', correctAnswer: '85' },
+};
 
 // ─── Module state ────────────────────────────────────────────────────────────
 
@@ -405,6 +412,35 @@ function installDebugSurface() {
      */
     replay(input) {
       return classifyMonster(input || {});
+    },
+
+    /**
+     * Seed a monster for local UI testing. It writes a realistic log entry,
+     * marks the monster seen, and dispatches the normal toast event. This is
+     * exposed only when the explicit debug flag is enabled.
+     */
+    seed(monsterId = 'bracketeer') {
+      if (!MONSTER_IDS.includes(monsterId)) {
+        throw new Error(`Unknown monster id: ${monsterId}`);
+      }
+      const fixture = DEBUG_FIXTURES[monsterId];
+      const timestamp = Date.now();
+      const isNew = !monsterStore.isMonsterSeen(monsterId);
+      const eventDetail = { monsterId, ...fixture, timestamp, isNew };
+      monsterStore.append({
+        monsterId,
+        topic: fixture.topic,
+        question: fixture.question,
+        wrongAnswer: fixture.userAnswer,
+        correctAnswer: fixture.correctAnswer,
+        timestamp,
+      });
+      monsterStore.markMonsterSeen(monsterId);
+      notifyMonsterLogChanged();
+      window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: eventDetail }));
+      _lastEvent = eventDetail;
+      pushEventLog({ stage: 'debug-seed', ...eventDetail });
+      return eventDetail;
     },
 
     /**

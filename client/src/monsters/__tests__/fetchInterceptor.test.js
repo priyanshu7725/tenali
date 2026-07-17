@@ -17,6 +17,20 @@ const ALLOWED_TOPICS = new Set([
   'decimals', 'sequences',
 ]);
 
+const DEBUG_FIXTURES = {
+  'bracketeer': { topic: 'basicarith', question: '3(x+2)', userAnswer: '3x + 2', correctAnswer: '3x + 6' },
+  'sign-swapper': { topic: 'basicarith', question: '(-3) + 5', userAnswer: '-2', correctAnswer: '2' },
+  'decimal-drifter': { topic: 'decimals', question: '0.5 + 0.3', userAnswer: '0.08', correctAnswer: '0.8' },
+  'carry-crasher': { topic: 'addition', question: '47 + 38', userAnswer: '75', correctAnswer: '85' },
+};
+
+console.log('=== DEBUG FIXTURES ===');
+for (const [monsterId, fixture] of Object.entries(DEBUG_FIXTURES)) {
+  const fieldsPresent = ['topic', 'question', 'userAnswer', 'correctAnswer'].every(field => fixture[field] != null && fixture[field] !== '');
+  console.log((fieldsPresent ? 'PASS' : 'FAIL') + ' | ' + monsterId + ' debug fixture has complete event data');
+  if (!fieldsPresent) process.exitCode = 1;
+}
+
 function isCheckUrl(url) {
   if (typeof url !== 'string') return null;
   const cleanUrl = url.split('?')[0].split('#')[0];
