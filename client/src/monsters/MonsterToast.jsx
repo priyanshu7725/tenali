@@ -166,9 +166,12 @@ export function MonsterToast({ onOpenHall, onTap }) {
       const detail = e.detail || {};
       if (!detail.monsterId) return;
 
-      // Determine variant based on whether monster was seen
-      const seen = isMonsterSeen(detail.monsterId);
-      const next = { ...detail, isIntro: !seen };
+      // The interceptor snapshots first-encounter state before updating
+      // storage. Manual debug events retain the storage-based fallback.
+      const isIntro = typeof detail.isNew === 'boolean'
+        ? detail.isNew
+        : !isMonsterSeen(detail.monsterId);
+      const next = { ...detail, isIntro };
 
       if (active) {
         // Queue for after current dismisses

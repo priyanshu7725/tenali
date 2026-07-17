@@ -72,6 +72,7 @@ let _enabled = true;       // runtime toggle, mirrored to localStorage
 let _debug = false;        // debug mode, mirrored to localStorage
 let _lastEvent = null;     // last intercepted event for debug
 let _appendQueue = Promise.resolve();  // serialized append queue (improvement C)
+let _originalFetch = null; // preserved once so toggles never wrap a wrapper
 
 // Per-topic cache of the most recent /question response. The /check response
 // does NOT include the question text — only the correct answer. To classify
@@ -129,11 +130,12 @@ function parseRequestBody(init) {
   }
 }
 
-function readBoolFlag(key) {
+function readBoolFlag(key, fallback = false) {
   try {
-    return window.localStorage.getItem(key) === 'true';
+    const value = window.localStorage.getItem(key);
+    return value == null ? fallback : value === 'true';
   } catch (_e) {
-    return false;
+    return fallback;
   }
 }
 
@@ -169,16 +171,20 @@ function extractNormalized(data, url) {
     cachedQ?.prompt ?? cachedQ?.question ??
     '';
 
+  // Student answer and some endpoint-specific correct-answer fallbacks come
+  // from the captured check request.
+  const reqBody = _lastRequestBody.get(topic) || {};
+
   // Correct answer — the /check response always includes this
   const correctAnswer =
-    data.correctAnswer ?? data.expected ?? data.answer ?? '';
+    data.correctAnswer ?? data.expected ?? data.answer ?? data.display ??
+    reqBody.correctAnswer ?? reqBody.expected ?? '';
 
   // Student answer — pull from captured request body (the /check response
   // does NOT echo this back). Different endpoints use different field names.
-  const reqBody = _lastRequestBody.get(topic) || {};
   const userAnswer =
     data.userAnswer ?? data.answer ?? data.submitted ?? data.studentAnswer ??
-    reqBody.answer ?? reqBody.userAnswer ?? reqBody.submitted ?? '';
+    reqBody.userAnswer ?? reqBody.submitted ?? reqBody.answer ?? '';
 
   // Sanity: need at least the topic; question/userAnswer/correctAnswer
   // may be empty strings (interceptor still fires, classifier returns null).
@@ -226,15 +232,15 @@ export function installMonstersInterceptor() {
     return;
   }
 
-  _enabled = readBoolFlag(ENABLE_FLAG_KEY);
-  if (!_enabled) {
+  _enabled = readBoolFlag(ENABLE_FLAG_KEY, true);
+  /* Legacy no-op install path retained in comments for historical context.
     // Spec §5.1: feature is gated off. Wrap a noop so a later runtime
     // enable() can swap it in.
     installNoopInterceptor();
     _installed = true;
     return;
   }
-
+  */
   _debug = readBoolFlag(DEBUG_FLAG_KEY);
   installActiveInterceptor();
   _installed = true;
@@ -252,9 +258,10 @@ function installNoopInterceptor() {
  * Active interceptor: wraps window.fetch with monster classification logic.
  */
 function installActiveInterceptor() {
-  const originalFetch = window.fetch.bind(window);
+  if (_originalFetch == null) _originalFetch = window.fetch.bind(window);
 
   window.fetch = function patchedFetch(input, init) {
+    if (!_enabled) return _originalFetch(input, init);
     // Capture the URL and request body up front so we can use them after the
     // fetch resolves. The /check response does NOT echo the request body, so
     // we have to capture it here.
@@ -266,7 +273,7 @@ function installActiveInterceptor() {
     }
 
     // Improvement E: explicit async contract
-    return Promise.resolve(originalFetch(input, init)).then(async (response) => {
+    return Promise.resolve(_originalFetch(input, init)).then(async (response) => {
       // Defensive: if anything below throws, return the original response
       // unchanged. The app MUST keep working.
       try {
@@ -289,6 +296,17 @@ function installActiveInterceptor() {
         // Clone before reading — the response body is single-use
         const data = await response.clone().json().catch(() => null);
         const normalized = extractNormalized(data, url);
+        // Debug trace: record every /check extraction attempt, including nulls
+        try {
+          _eventLog.push({
+            at: new Date().toISOString(),
+            stage: 'normalize',
+            url,
+            data: data ? { correct: data.correct, correctAnswer: data.correctAnswer, message: data.message } : null,
+            normalized,
+          });
+          if (_eventLog.length > _eventLogMax) _eventLog.shift();
+        } catch {}
         if (!normalized) return response;
 
         // Run the classifier
@@ -317,14 +335,18 @@ function installActiveInterceptor() {
         // Track for debug
         _lastEvent = eventDetail;
         pushEventLog(eventDetail);
+        captureNormalizedForDebug(eventDetail, normalized);
 
-        // Mark seen (so toast variant flips to "strikes again!" next time)
+        // Snapshot first-encounter state before writing it. The toast relies
+        // on this event value because storage is updated before dispatch.
+        let isNew = false;
         try {
-          const newlyMarked = monsterStore.markMonsterSeen(monsterId);
-          if (newlyMarked) notifyMonsterLogChanged();
+          isNew = !monsterStore.isMonsterSeen(monsterId);
+          if (monsterStore.markMonsterSeen(monsterId)) notifyMonsterLogChanged();
         } catch (e) {
           console.warn('[monsters] markMonsterSeen failed:', e.message);
         }
+        eventDetail.isNew = isNew;
 
         // Dispatch UI event
         try {
@@ -404,10 +426,6 @@ function installDebugSurface() {
     enable() {
       writeBoolFlag(ENABLE_FLAG_KEY, true);
       _enabled = true;
-      if (!_installed) {
-        installActiveInterceptor();
-        _installed = true;
-      }
     },
 
     /**
@@ -428,10 +446,8 @@ function installDebugSurface() {
      * Use this when you've changed enable/debug flags and want a clean reload.
      */
     reset() {
-      _installed = false;
       _lastEvent = null;
       _appendQueue = Promise.resolve();
-      installMonstersInterceptor();
     },
 
     /**
@@ -460,10 +476,10 @@ function installDebugSurface() {
 export function enableMonsters() {
   writeBoolFlag(ENABLE_FLAG_KEY, true);
   _enabled = true;
-  if (_installed) {
+  if (!_installed) {
     // Already installed — re-install to swap from noop to active.
-    _installed = false;
     installMonstersInterceptor();
+    _installed = true;
   }
 }
 
@@ -507,4 +523,15 @@ function getEventLog() {
 }
 function clearEventLog() {
   _eventLog.length = 0;
+}
+
+
+function captureNormalizedForDebug(eventDetail, normalized) {
+  _eventLog.push({
+    at: new Date().toISOString(),
+    monsterId: eventDetail.monsterId || null,
+    topic: eventDetail.topic || null,
+    input: normalized || null,  // what the classifier actually saw
+  });
+  if (_eventLog.length > _eventLogMax) _eventLog.shift();
 }

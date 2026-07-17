@@ -84,8 +84,8 @@ function extractNormalized(data, url) {
   const cachedQ = _questionCache.get(topic);
   const reqBody = _lastRequestBody.get(topic) || {};
   const question = data.question ?? data.prompt ?? data.q ?? data.stem ?? data.problem ?? cachedQ?.prompt ?? cachedQ?.question ?? '';
-  const correctAnswer = data.correctAnswer ?? data.expected ?? data.answer ?? '';
-  const userAnswer = data.userAnswer ?? data.answer ?? data.submitted ?? data.studentAnswer ?? reqBody.answer ?? reqBody.userAnswer ?? reqBody.submitted ?? '';
+  const correctAnswer = data.correctAnswer ?? data.expected ?? data.answer ?? data.display ?? reqBody.correctAnswer ?? reqBody.expected ?? '';
+  const userAnswer = data.userAnswer ?? data.answer ?? data.submitted ?? data.studentAnswer ?? reqBody.userAnswer ?? reqBody.submitted ?? reqBody.answer ?? '';
   return { question, userAnswer, correctAnswer, topic };
 }
 
@@ -143,6 +143,32 @@ const extractCases = [
       url: 'https://api.example.com/basicarith-api/check',
     },
     expect: { question: '3(x+2)', userAnswer: '3x + 2', correctAnswer: '3x + 6', topic: 'basicarith' },
+  },
+  {
+    label: 'display fallback: server response without correctAnswer',
+    in: {
+      data: { correct: false, display: '0.8', message: 'Incorrect' },
+      url: 'https://api.example.com/decimals-api/check',
+      setup: () => {
+        _questionCache.set('decimals', { prompt: '0.5 + 0.3 = ?' });
+        _lastRequestBody.set('decimals', { answer: '0.08' });
+      },
+      teardown: () => { _questionCache.clear(); _lastRequestBody.clear(); },
+    },
+    expect: { question: '0.5 + 0.3 = ?', userAnswer: '0.08', correctAnswer: '0.8', topic: 'decimals' },
+  },
+  {
+    label: 'generic decimals payload prefers submitted userAnswer over question answer',
+    in: {
+      data: { correct: false, display: '16.2', message: 'Incorrect' },
+      url: 'https://api.example.com/decimals-api/check',
+      setup: () => {
+        _questionCache.set('decimals', { prompt: '10.1 + 6.1 = ?' });
+        _lastRequestBody.set('decimals', { answer: 16.2, userAnswer: '1.62' });
+      },
+      teardown: () => { _questionCache.clear(); _lastRequestBody.clear(); },
+    },
+    expect: { question: '10.1 + 6.1 = ?', userAnswer: '1.62', correctAnswer: '16.2', topic: 'decimals' },
   },
   // Fallback: prompt instead of question
   {
