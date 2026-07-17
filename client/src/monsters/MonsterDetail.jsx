@@ -107,9 +107,9 @@ function injectDetailStyles() {
     .monster-detail-stat {
       text-align: center;
       padding: 10px;
-      background: rgba(255, 255, 255, 0.04);
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: var(--clr-hover, rgba(255,245,230,0.04));
+      border-radius: var(--radius-sm, 10px);
+      border: 1px solid var(--clr-border, rgba(255,245,230,0.18));
     }
     .monster-detail-stat-value {
       font-size: 20px;
@@ -150,12 +150,12 @@ function injectDetailStyles() {
       display: flex;
       gap: 10px;
       padding-top: 8px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid var(--clr-border, rgba(255,245,230,0.18));
     }
     .monster-detail-btn {
       flex: 1;
       padding: 12px 16px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm, 10px);
       border: none;
       font-size: 14px;
       font-weight: 600;
@@ -174,19 +174,19 @@ function injectDetailStyles() {
       cursor: not-allowed;
     }
     .monster-detail-btn-secondary {
-      background: rgba(255, 255, 255, 0.08);
-      color: inherit;
+      background: var(--clr-hover, rgba(255,245,230,0.04));
+      color: var(--clr-text, #ede8e3);
     }
     .monster-detail-btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.12);
+      background: var(--clr-hover-strong, rgba(255,245,230,0.08));
     }
     .monster-detail-topic-select {
       flex: 1;
       padding: 12px 16px;
       border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(0, 0, 0, 0.2);
-      color: inherit;
+      border: 1px solid var(--clr-border, rgba(255,245,230,0.18));
+      background: var(--clr-input, #3e3631);
+      color: var(--clr-text, #ede8e3);
       font-size: 14px;
       font-family: inherit;
     }
@@ -217,6 +217,27 @@ function getSuggestedTopic(monsterId) {
   return entries[0][0];
 }
 
+/**
+ * Return all unique topics this monster has been triggered on,
+ * sorted by frequency (most breached topic first).
+ * Used to populate the cure topic selector with real choices.
+ */
+function getAllTopics(monsterId) {
+  const state = load();
+  if (!state || !Array.isArray(state.log)) return [];
+  const counts = {};
+  for (const e of state.log) {
+    if (e.monsterId === monsterId && e.topic) {
+      counts[e.topic] = (counts[e.topic] || 0) + 1;
+    }
+  }
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([topic]) => topic);
+}
+
+import MonsterAvatar from './MonsterAvatar.jsx';
+
 export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory, onBack, onStartCure }) {
   // Inject styles once
   if (typeof document !== 'undefined') injectDetailStyles();
@@ -227,6 +248,7 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
   // The cure flow will need a topic. Default to most common historical topic
   // for this monster. User can change before starting.
   const initialTopic = useMemo(() => getSuggestedTopic(monsterId) || '', [monsterId]);
+  const allTopics = useMemo(() => getAllTopics(monsterId), [monsterId]);
   const [topic, setTopic] = useState(initialTopic);
 
   if (!entry) {
@@ -240,6 +262,7 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
 
   const curesTotal = Array.isArray(cureHistory) ? cureHistory.length : 0;
   const curesSuccessful = Array.isArray(cureHistory) ? cureHistory.filter(c => c && c.success).length : 0;
+  const isHealed = curesSuccessful > 0;
 
   function handleStart() {
     if (!topic) return;
@@ -249,9 +272,9 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
   return (
     <div className="monster-detail" data-monster-id={monsterId}>
       <div className="monster-detail-hero" style={{ '--monster-primary': colors.primary, '--monster-secondary': colors.secondary }}>
-        <div className="monster-detail-blob" aria-hidden="true">{colors.emoji}</div>
+        <MonsterAvatar monsterId={monsterId} size={80} healed={isHealed} />
         <div>
-          <h2 className="monster-detail-name">{entry.name}</h2>
+          <h2 className="monster-detail-name" style={{ fontFamily: 'var(--font-display)' }}>{entry.name}</h2>
           <p className="monster-detail-tagline">{entry.tagline}</p>
         </div>
       </div>
@@ -272,12 +295,12 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
       </div>
 
       <div className="monster-detail-section">
-        <h3>What it does</h3>
+        <h3 style={{ fontFamily: 'var(--font-display)' }}>What it does</h3>
         <p className="monster-detail-description">{entry.description}</p>
       </div>
 
       <div className="monster-detail-section">
-        <h3>Tips for next time</h3>
+        <h3 style={{ fontFamily: 'var(--font-display)' }}>Tips for next time</h3>
         <ul className="monster-detail-tips">
           {entry.tips.map((tip, i) => (
             <li key={i}>{tip}</li>
@@ -292,8 +315,17 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
           onChange={(e) => setTopic(e.target.value)}
           aria-label="Cure topic"
         >
-          <option value="" disabled>Pick a topic to practice…</option>
-          {initialTopic && <option value={initialTopic}>{initialTopic} (your usual)</option>}
+          {allTopics.length === 0 && (
+            <option value="" disabled>No history yet — get a question wrong first</option>
+          )}
+          {allTopics.length > 0 && !topic && (
+            <option value="" disabled>Pick a topic to practice…</option>
+          )}
+          {allTopics.map((t) => (
+            <option key={t} value={t}>
+              {t}{t === initialTopic ? ' (your usual)' : ''}
+            </option>
+          ))}
         </select>
         <button
           className="monster-detail-btn monster-detail-btn-primary"

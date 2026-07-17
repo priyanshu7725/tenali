@@ -28,6 +28,7 @@ import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getMonsterName, getMonsterTagline } from './monsterExplanations.js';
 import { isMonsterSeen } from './monsterStore.js';
+import MonsterAvatar from './MonsterAvatar.jsx';
 
 const EVENT_NAME = 'tenali:wrongAnswer';
 const INTRO_DURATION_MS = 5000;
@@ -57,8 +58,8 @@ function injectToastStyles() {
       min-width: 280px;
       max-width: 360px;
       padding: 16px 18px;
-      background: var(--card-bg, #1e1e2e);
-      color: var(--text, #f0f0f0);
+      background: var(--clr-card, #2c2622);
+      color: var(--clr-text, #ede8e3);
       border-radius: 12px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
       border-left: 4px solid var(--monster-primary, #5b8def);
@@ -79,19 +80,6 @@ function injectToastStyles() {
       display: flex;
       align-items: center;
       gap: 12px;
-    }
-    .monster-toast-blob {
-      width: 40px;
-      height: 40px;
-      border-radius: 50% 40% 60% 50%;
-      background: var(--monster-primary, #5b8def);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.2);
-      animation: monster-blob-pulse 1.4s ease-in-out infinite;
     }
     .monster-toast-content {
       flex: 1;
@@ -128,10 +116,6 @@ function injectToastStyles() {
         opacity: 1;
         transform: translateX(0);
       }
-    }
-    @keyframes monster-blob-pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.08); }
     }
   `;
 
@@ -248,7 +232,7 @@ export function MonsterToast({ onOpenHall, onTap }) {
       data-monster-topic={active.topic}
     >
       <div className="monster-toast-row">
-        <div className="monster-toast-blob" aria-hidden="true">{colors.emoji}</div>
+        <MonsterAvatar monsterId={active.monsterId} size={40} healed={false} />
         <div className="monster-toast-content">
           <div className="monster-toast-title">{name} {titleSuffix}</div>
           <div className="monster-toast-tagline">{tagline}</div>

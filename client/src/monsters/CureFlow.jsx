@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { load, recordCure } from './monsterStore.js';
 import { getMonsterName } from './monsterExplanations.js';
+import MonsterAvatar from './MonsterAvatar.jsx';
 
 const REQUIRED_CORRECT = 4;
 const QUESTION_COUNT = 5;
@@ -63,22 +64,86 @@ function injectStyles() {
   const style = document.createElement('style');
   style.setAttribute('data-monster-cure', '');
   style.textContent = `
-    .monster-cure-backdrop { position:fixed; inset:0; z-index:10010; display:grid; place-items:center; padding:16px; background:rgba(5,8,18,.78); }
-    .monster-cure-card { width:min(560px,100%); border-radius:18px; padding:24px; color:#f8fbff; background:#18213a; box-shadow:0 24px 70px rgba(0,0,0,.45); }
-    .monster-cure-kicker { margin:0 0 6px; color:#9fc0ff; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
-    .monster-cure-title { margin:0; font-size:25px; }
-    .monster-cure-progress { margin:18px 0 8px; color:#bdc8df; font-size:14px; }
-    .monster-cure-track { height:7px; overflow:hidden; border-radius:999px; background:#2a3657; }
-    .monster-cure-track > span { display:block; height:100%; background:#6ea8fe; transition:width .2s ease; }
-    .monster-cure-question { margin:26px 0 14px; padding:18px; border-radius:12px; text-align:center; font-size:22px; font-weight:700; background:rgba(255,255,255,.07); }
-    .monster-cure-input { box-sizing:border-box; width:100%; padding:13px 14px; border:1px solid #53678f; border-radius:9px; color:inherit; background:#10182b; font:inherit; }
-    .monster-cure-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
-    .monster-cure-actions button { padding:10px 15px; border:0; border-radius:8px; cursor:pointer; font:inherit; font-weight:700; }
-    .monster-cure-primary { color:#08111f; background:#8dbbff; }
-    .monster-cure-secondary { color:#dce7ff; background:#2b3858; }
-    .monster-cure-feedback { min-height:24px; margin:12px 0 0; font-size:14px; }
-    .monster-cure-good { color:#88e2aa; } .monster-cure-bad { color:#ff9f9f; }
-    .monster-cure-result { text-align:center; padding:12px 0; }
+    .monster-cure-backdrop {
+      position: fixed; inset: 0; z-index: 10010; display: grid; place-items: center;
+      padding: 16px; background: rgba(0,0,0,0.65);
+    }
+    .monster-cure-card {
+      position: relative;
+      width: min(560px,100%); border-radius: 24px; padding: 32px 24px;
+      color: var(--clr-text, #ede8e3); background: var(--clr-card, #2c2622);
+      box-shadow: var(--shadow-card, 0 4px 24px rgba(0,0,0,0.25));
+      border: 1px solid var(--clr-border, rgba(255,245,230,0.18));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .monster-cure-kicker {
+      margin: 0 0 6px; color: var(--clr-accent, #e8864a);
+      font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+    }
+    .monster-cure-title {
+      margin: 0 0 16px;
+      font-family: var(--font-display);
+      font-size: 26px;
+    }
+    .monster-cure-progress { margin: 18px 0 8px; color: var(--clr-text-soft, #a89e94); font-size: 14px; width: 100%; text-align: left; }
+    .monster-cure-track { height: 7px; overflow: hidden; border-radius: 999px; background: var(--clr-surface, #362f2a); width: 100%; }
+    .monster-cure-track > span { display: block; height: 100%; background: var(--clr-accent, #e8864a); transition: width .2s ease; }
+    .monster-cure-question {
+      margin: 24px 0 14px; padding: 20px; border-radius: var(--radius-sm, 10px);
+      text-align: center; font-size: 24px; font-weight: 700; width: 100%;
+      background: var(--clr-surface, #362f2a); border: 1px solid var(--clr-border, rgba(255,245,230,0.18));
+    }
+    .monster-cure-input {
+      box-sizing: border-box; width: 100%; padding: 13px 14px;
+      border: 1.5px solid var(--clr-border, rgba(255,245,230,0.18));
+      border-radius: var(--radius-sm, 10px); color: var(--clr-text, #ede8e3);
+      background: var(--clr-input, #3e3631); font: inherit; outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .monster-cure-input:focus {
+      border-color: var(--clr-accent, #e8864a);
+      box-shadow: 0 0 0 3px var(--clr-accent-soft);
+    }
+    .monster-cure-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; width: 100%; }
+    .monster-cure-actions button {
+      padding: 12px 24px; border: 0; border-radius: var(--radius-sm, 10px);
+      cursor: pointer; font: inherit; font-weight: 700; transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+    .monster-cure-primary { color: #fff; background: var(--clr-accent, #e8864a); box-shadow: var(--shadow-btn); }
+    .monster-cure-primary:hover { transform: translateY(-1px); background: #cc6a2e; }
+    .monster-cure-primary:active { transform: translateY(0); }
+    .monster-cure-secondary { color: var(--clr-text-soft, #a89e94); background: var(--clr-surface, #362f2a); border: 1px solid var(--clr-border, rgba(255,245,230,0.18)) !important; }
+    .monster-cure-secondary:hover { background: var(--clr-hover-strong, rgba(255,245,230,0.08)); }
+    .monster-cure-feedback { min-height: 24px; margin: 12px 0 0; font-size: 14px; width: 100%; text-align: left; }
+    .monster-cure-good { color: var(--clr-correct, #5cb87a); font-weight: 600; }
+    .monster-cure-bad  { color: var(--clr-wrong,   #e05a4a); font-weight: 600; }
+    .monster-cure-result { text-align: center; padding: 12px 0; width: 100%; }
+    .monster-cure-result h3 { font-family: var(--font-display); font-size: 24px; margin: 16px 0 8px; }
+    
+    /* CELEBRATION POOF */
+    .cure-poof-cloud {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+      transform: scale(0);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+      top: 30px;
+    }
+    .cure-poof-cloud.poof-animate {
+      animation: cure-poof-flash 0.5s ease-out;
+    }
+    @keyframes cure-poof-flash {
+      0% { transform: scale(0.3); opacity: 1; filter: brightness(2); }
+      50% { transform: scale(1.3); opacity: 0.8; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -92,6 +157,7 @@ export function CureFlow({ monsterId, topic, onComplete, onCancel }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [finished, setFinished] = useState(false);
+  const [poofActive, setPoofActive] = useState(false);
   const startedAt = useMemo(() => Date.now(), []);
 
   useEffect(() => {
@@ -103,8 +169,6 @@ export function CureFlow({ monsterId, topic, onComplete, onCancel }) {
         try { prepared.push(await fetchFallbackQuestion(topic, i)); }
         catch (err) { console.warn('[monsters] cure fallback question failed:', err.message); break; }
       }
-      // If the endpoint is unavailable, repeating a real historical mistake
-      // is still better than showing a broken cure session.
       while (prepared.length < QUESTION_COUNT && prepared.length > 0) {
         prepared.push({ ...prepared[0], id: `repeat-${prepared.length}` });
       }
@@ -116,6 +180,41 @@ export function CureFlow({ monsterId, topic, onComplete, onCancel }) {
     prepare();
     return () => { cancelled = true; };
   }, [monsterId, topic]);
+
+  // Spark Celebration Trigger
+  useEffect(() => {
+    if (finished && correctCount >= REQUIRED_CORRECT) {
+      setPoofActive(true);
+      setTimeout(() => setPoofActive(false), 500);
+
+      // Trigger operators explosion
+      const chars = ['+', '-', 'x', '÷', '★', '✨', '✔'];
+      const colors = ['#ffd700', '#5cb87a', '#e8864a', '#fff'];
+
+      // Particle explosion from the center card
+      for (let i = 0; i < 40; i++) {
+        const p = document.createElement('div');
+        p.className = 'cure-particle';
+        p.innerText = chars[Math.floor(Math.random() * chars.length)];
+        p.style.color = colors[Math.floor(Math.random() * colors.length)];
+        
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 80 + Math.random() * 180;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist;
+        
+        p.style.setProperty('--tx', `${tx}px`);
+        p.style.setProperty('--ty', `${ty}px`);
+        
+        // Spawn around the screen center
+        p.style.left = '50%';
+        p.style.top = '30%';
+
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1200);
+      }
+    }
+  }, [finished, correctCount]);
 
   function submit() {
     if (!answer.trim() || feedback || !questions[index]) return;
@@ -145,6 +244,16 @@ export function CureFlow({ monsterId, topic, onComplete, onCancel }) {
   const body = (
     <div className="monster-cure-backdrop" role="dialog" aria-modal="true" aria-label="Monster cure">
       <div className="monster-cure-card">
+        <div className={`cure-poof-cloud ${poofActive ? 'poof-animate' : ''}`} />
+        
+        {/* Render Monster Avatar. Turns healed only on successful finished view */}
+        <MonsterAvatar
+          monsterId={monsterId}
+          size={90}
+          healed={finished && correctCount >= REQUIRED_CORRECT}
+          style={{ marginBottom: '16px' }}
+        />
+
         <p className="monster-cure-kicker">Cure run · {getMonsterName(monsterId)}</p>
         <h2 className="monster-cure-title">Practice the pattern, not the panic.</h2>
         {loading && <p>Preparing five questions…</p>}

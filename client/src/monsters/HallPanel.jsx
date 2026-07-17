@@ -54,16 +54,17 @@ function injectHallStyles() {
       animation: monster-hall-fadein 200ms ease-out;
     }
     .monster-hall-card {
-      background: var(--card-bg, #1e1e2e);
-      color: var(--text, #f0f0f0);
-      border-radius: 16px;
+      background: var(--clr-card, #2c2622);
+      color: var(--clr-text, #ede8e3);
+      border: 1px solid var(--clr-border);
+      border-radius: 24px;
       width: 100%;
       max-width: 720px;
       max-height: calc(100vh - 48px);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      box-shadow: var(--shadow-card);
       animation: monster-hall-slideup 280ms cubic-bezier(0.4, 0, 0.2, 1);
     }
     .monster-hall-header {
@@ -71,16 +72,17 @@ function injectHallStyles() {
       align-items: center;
       justify-content: space-between;
       padding: 20px 24px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid var(--clr-border, rgba(255,245,230,0.18));
     }
     .monster-hall-title {
-      font-size: 20px;
+      font-family: var(--font-display);
+      font-size: 24px;
       font-weight: 700;
       margin: 0;
     }
     .monster-hall-subtitle {
-      font-size: 12px;
-      opacity: 0.7;
+      font-size: 13px;
+      color: var(--clr-text-soft);
       margin-top: 2px;
     }
     .monster-hall-close {
@@ -97,7 +99,7 @@ function injectHallStyles() {
       justify-content: center;
     }
     .monster-hall-close:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: var(--clr-hover-strong, rgba(255,245,230,0.08));
     }
     .monster-hall-body {
       flex: 1;

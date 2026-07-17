@@ -52,9 +52,9 @@ function injectCardStyles() {
       align-items: center;
       gap: 14px;
       padding: 14px 16px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
+      background: var(--clr-hover, rgba(255,245,230,0.04));
+      border: 1px solid var(--clr-border, rgba(255,245,230,0.18));
+      border-radius: var(--radius-sm, 10px);
       cursor: pointer;
       transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
       text-align: left;
@@ -64,7 +64,7 @@ function injectCardStyles() {
     }
     .monster-card:hover {
       transform: translateY(-2px);
-      background: rgba(255, 255, 255, 0.07);
+      background: var(--clr-hover-strong, rgba(255,245,230,0.08));
       border-color: var(--monster-primary, #5b8def);
     }
     .monster-card:focus-visible {
@@ -77,7 +77,7 @@ function injectCardStyles() {
     }
     .monster-card.unseen:hover {
       transform: none;
-      border-color: rgba(255, 255, 255, 0.08);
+      border-color: var(--clr-border, rgba(255,245,230,0.18));
     }
     .monster-card-blob {
       width: 56px;
@@ -128,6 +128,8 @@ function injectCardStyles() {
   document.head.appendChild(style);
 }
 
+import MonsterAvatar from './MonsterAvatar.jsx';
+
 export function MonsterCard({ monsterId, seen, breachCount, lastAttempt, cureHistory, onClick }) {
   // Inject styles once on first render
   if (typeof document !== 'undefined') injectCardStyles();
@@ -135,6 +137,7 @@ export function MonsterCard({ monsterId, seen, breachCount, lastAttempt, cureHis
   const colors = MONSTER_COLORS[monsterId] || MONSTER_COLORS['bracketeer'];
   const name = getMonsterName(monsterId);
   const curesSuccessful = Array.isArray(cureHistory) ? cureHistory.filter(c => c && c.success).length : 0;
+  const isHealed = seen && curesSuccessful > 0;
 
   const meta = seen
     ? `Breached ${breachCount} time${breachCount === 1 ? '' : 's'} · last ${formatRelativeTime(lastAttempt)}`
@@ -148,7 +151,11 @@ export function MonsterCard({ monsterId, seen, breachCount, lastAttempt, cureHis
       disabled={!seen}
       aria-label={seen ? `Open details for ${name}` : `${name} not yet met`}
     >
-      <div className="monster-card-blob" aria-hidden="true">{seen ? colors.emoji : '❓'}</div>
+      {seen ? (
+        <MonsterAvatar monsterId={monsterId} size={56} healed={isHealed} />
+      ) : (
+        <div className="monster-card-blob" aria-hidden="true">❓</div>
+      )}
       <div className="monster-card-body">
         <div className="monster-card-name">
           {name}

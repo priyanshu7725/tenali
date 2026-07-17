@@ -33,7 +33,7 @@ export const MONSTERS_ENABLED = {
   'bracketeer': true,
   'sign-swapper': true,
   'decimal-drifter': true,
-  'carry-crasher': false,
+  'carry-crasher': true,
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -169,10 +169,10 @@ function isCarryMistake(question, userAnswer, correctAnswer) {
 // ─── Public classifier ──────────────────────────────────────────────────────
 
 const RULES = [
-  { id: 'bracketeer',      matches: isBracketeerSlip },
-  { id: 'sign-swapper',    matches: isSignSwap },
+  { id: 'bracketeer', matches: isBracketeerSlip },
+  { id: 'sign-swapper', matches: isSignSwap },
   { id: 'decimal-drifter', matches: isDecimalDrift },
-  { id: 'carry-crasher',   matches: isCarryMistake },
+  { id: 'carry-crasher', matches: isCarryMistake },
 ];
 
 /**

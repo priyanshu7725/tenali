@@ -59,6 +59,7 @@ const ALLOWED_TOPICS = new Set([
   'percent',
   'decimals',
   'sequences',
+  'polymul',  // Poly Multiply — enables Bracketeer on a(x±c) easy questions
 ]);
 
 const EVENT_NAME = 'tenali:wrongAnswer';
@@ -66,10 +67,10 @@ const DEBUG_FLAG_KEY = 'tenali.monsters.debug';
 const ENABLE_FLAG_KEY = 'tenali.monsters.enabled';
 
 const DEBUG_FIXTURES = {
-  'bracketeer': { topic: 'basicarith', question: '3(x+2)', userAnswer: '3x + 2', correctAnswer: '3x + 6' },
-  'sign-swapper': { topic: 'basicarith', question: '(-3) + 5', userAnswer: '-2', correctAnswer: '2' },
+  'bracketeer':      { topic: 'polymul', question: '3(x+2)', userAnswer: '3x + 2', correctAnswer: '3x + 6' },
+  'sign-swapper':    { topic: 'basicarith', question: '(-3) + 5', userAnswer: '-2', correctAnswer: '2' },
   'decimal-drifter': { topic: 'decimals', question: '0.5 + 0.3', userAnswer: '0.08', correctAnswer: '0.8' },
-  'carry-crasher': { topic: 'addition', question: '47 + 38', userAnswer: '75', correctAnswer: '85' },
+  'carry-crasher':   { topic: 'addition', question: '47 + 38', userAnswer: '75', correctAnswer: '85' },
 };
 
 // ─── Module state ────────────────────────────────────────────────────────────
