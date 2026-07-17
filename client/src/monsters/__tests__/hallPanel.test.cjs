@@ -124,6 +124,9 @@ check('App.jsx mounts <HallPanel>',
 check('App.jsx passes onOpenHall to MonsterToast',
   /<MonsterToast\s+onOpenHall=\{/.test(appSrc));
 
+check('App.jsx opens Hall when a repeat toast is tapped',
+  /<MonsterToast\s+onOpenHall=\{[\s\S]*?onTap=\{\(\) => setHallOpen\(true\)\}/.test(appSrc));
+
 console.log('---');
 console.log(`Total: ${pass}/${pass + fail}`);
 if (fail > 0) process.exit(1);

@@ -44183,7 +44183,10 @@ function App() {
       )}
       {renderCelebrationModal()}
       {/* Misconception Monsters — toast overlay (portals to body) + Hall modal. Spec §6. */}
-      <MonsterToast onOpenHall={() => setHallOpen(true)} />
+      <MonsterToast
+        onOpenHall={() => setHallOpen(true)}
+        onTap={() => setHallOpen(true)}
+      />
       <HallPanel
         open={hallOpen}
         onClose={() => setHallOpen(false)}
