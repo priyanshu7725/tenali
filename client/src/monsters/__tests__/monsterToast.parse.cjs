@@ -15,6 +15,7 @@ const FILES = [
   'client/src/monsters/HallPanel.jsx',
   'client/src/monsters/MonsterCard.jsx',
   'client/src/monsters/MonsterDetail.jsx',
+  'client/src/monsters/CureFlow.jsx',
   'client/src/App.jsx',
 ];
 

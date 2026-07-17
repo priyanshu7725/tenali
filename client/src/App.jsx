@@ -80,6 +80,7 @@ import { playSound } from './audioContext'
 import { installMonstersInterceptor } from './monsters/fetchInterceptor.js'
 import MonsterToast from './monsters/MonsterToast.jsx'
 import HallPanel from './monsters/HallPanel.jsx'
+import CureFlow from './monsters/CureFlow.jsx'
 import { load as loadMonsterLog } from './monsters/monsterStore.js'
 
 // API base URL from environment variables (Vite)
@@ -42248,6 +42249,7 @@ function App() {
     try { return loadMonsterLog() } catch { return null }
   })
   const [hallOpen, setHallOpen] = useState(false)
+  const [activeCure, setActiveCure] = useState(null)
 
   // Keep monsterLog in sync with localStorage. The fetchInterceptor's
   // monsterStore.append() writes to localStorage; we re-hydrate when the
@@ -44187,13 +44189,20 @@ function App() {
         onClose={() => setHallOpen(false)}
         monsterLog={monsterLog}
         onStartCure={(monsterId, topic) => {
-          // Placeholder for step 7 (CureFlow). Closes hall and would open
-          // the cure runner. For now we just close; step 7 wires the actual
-          // runner.
-          console.log('[monsters] start cure requested:', monsterId, topic)
           setHallOpen(false)
+          setActiveCure({ monsterId, topic })
         }}
       />
+      {activeCure && <CureFlow
+        monsterId={activeCure.monsterId}
+        topic={activeCure.topic}
+        onCancel={() => setActiveCure(null)}
+        onComplete={() => {
+          try { setMonsterLog(loadMonsterLog()) } catch {}
+          setActiveCure(null)
+          setHallOpen(true)
+        }}
+      />}
     </div>
   )
 }
