@@ -18,7 +18,13 @@ const QUESTION_COUNT = 5;
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 function normalise(value) {
-  return String(value ?? '').trim().replace(/\s+/g, '').replace(/−/g, '-');
+  return String(value ?? '')
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/[−]/g, '-')
+    .replace(/[²]/g, '^2')
+    .replace(/[¹]/g, '^1')
+    .replace(/[⁰]/g, '^0');
 }
 
 function answersMatch(submitted, expected) {

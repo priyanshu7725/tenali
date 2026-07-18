@@ -71,38 +71,102 @@ function normalizeForStringMatch(s) {
 // Implementation note: we are strict about the question shape. We will miss
 // questions like `3(x + 2y)` or `(x+2)*3` — those are not bracketeer slips,
 // they are different misconception shapes. v2 can add broader rules.
+function normalizeAlgebra(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/\s+/g, '')
+    .replace(/[−]/g, '-')
+    .replace(/[*×]/g, '')
+    .replace(/[²]/g, '^2')
+    .replace(/[¹]/g, '^1')
+    .replace(/[⁰]/g, '^0')
+    .toLowerCase();
+}
+
+function parseCoeff(s) {
+  if (!s) return 1;
+  if (s === '-') return -1;
+  return parseInt(s, 10);
+}
+
 function isBracketeerSlip(question, userAnswer, correctAnswer) {
   if (typeof question !== 'string') return false;
-  const q = question.trim();
+  const qNorm = normalizeAlgebra(question);
+  const uaNorm = normalizeAlgebra(userAnswer);
+  if (!uaNorm) return false;
 
-  // Match: optional whitespace, leading integer, "(", single letter, "+" or "-",
-  // integer, ")". Tolerant of spaces inside the bracket.
-  const m = /^\s*(-?\d+)\s*\(\s*([a-zA-Z])\s*([+\-])\s*(-?\d+)\s*\)\s*$/.exec(q);
-  if (!m) return false;
+  // Case 1: Constant Distribution: a(x + c) or a(x - c) or (a)(x + c)
+  // e.g. 3(x+2) -> 3x+2, 3x
+  // e.g. (5)(x-3) -> 5x-3
+  const m1 = /^\(?(-?\d+)\)?\(([a-z])([+-])(\d+)\)$/.exec(qNorm);
+  if (m1) {
+    const a = parseInt(m1[1], 10);
+    const varName = m1[2];
+    const innerOp = m1[3];
+    const c = parseInt(m1[4], 10);
 
-  const a = parseInt(m[1], 10);
-  const varName = m[2];
-  const innerOp = m[3]; // "+" or "-"
-  const c = parseInt(m[4], 10);
-
-  // Build the "first term only" expected wrong answer.
-  // For  a(b + c)  the correct expansion is aX + a·c. First-only: aX + c.
-  // For  a(b - c)  the correct expansion is aX - a·c. First-only: aX - c.
-  const firstTerm = `${a}${varName}`;
-  let firstOnlyForm1;
-  let firstOnlyForm2;
-  if (innerOp === '+') {
-    firstOnlyForm1 = `${firstTerm} + ${c}`;
-    firstOnlyForm2 = firstTerm; // dropped the second term entirely
-  } else {
-    // innerOp === '-'. Correct: aX - a·|c|  (a and c signs combined).
-    // First-only: aX - |c|.
-    firstOnlyForm1 = `${firstTerm} - ${Math.abs(c)}`;
-    firstOnlyForm2 = firstTerm;
+    const firstTerm = `${a}${varName}`;
+    let firstOnlyForm1;
+    let firstOnlyForm2;
+    if (innerOp === '+') {
+      firstOnlyForm1 = `${firstTerm}+${c}`;
+      firstOnlyForm2 = firstTerm;
+    } else {
+      firstOnlyForm1 = `${firstTerm}-${c}`;
+      firstOnlyForm2 = firstTerm;
+    }
+    return uaNorm === firstOnlyForm1 || uaNorm === firstOnlyForm2;
   }
 
-  const ua = normalizeForStringMatch(userAnswer);
-  return ua === firstOnlyForm1 || ua === firstOnlyForm2;
+  // Case 2: Linear Term Distribution: ax(bx + c) or ax(bx - c) or (ax)(bx + c)
+  // e.g. 6x(x+5) -> 6x^2+5, 6x^2+30, 6x^2+5x
+  // e.g. (2x)(6x+6) -> 12x^2+6x
+  const m2 = /^\(?(-?\d*)([a-z])\)?\((-?\d*)([a-z])([+-])(\d+)\)$/.exec(qNorm);
+  if (m2) {
+    const varName1 = m2[2];
+    const varName2 = m2[4];
+    if (varName1 !== varName2) return false;
+
+    const a = parseCoeff(m2[1]);
+    const b = parseCoeff(m2[3]);
+    const innerOp = m2[5];
+    const c = parseInt(m2[6], 10);
+
+    const ab = a * b;
+    const term1 = ab === 1 ? `${varName1}^2` : ab === -1 ? `-${varName1}^2` : `${ab}${varName1}^2`;
+
+    const sign = innerOp;
+    const slipA = `${term1}${sign}${c}`;
+    const slipB = `${term1}${sign}${Math.abs(a * c)}`;
+    const slipC = `${term1}${sign}${c}${varName1}`;
+
+    return uaNorm === slipA || uaNorm === slipB || uaNorm === slipC;
+  }
+
+  // Case 3: Double Bracket / FOIL Distribution: (px + a)(qx + b)
+  // e.g. (x+3)(x+5) -> x^2+15
+  const m3 = /^\((-?\d*)([a-z])([+-])(\d+)\)\((-?\d*)([a-z])([+-])(\d+)\)$/.exec(qNorm);
+  if (m3) {
+    const varName1 = m3[2];
+    const varName2 = m3[6];
+    if (varName1 !== varName2) return false;
+
+    const p = parseCoeff(m3[1]);
+    const a = m3[3] === '-' ? -parseInt(m3[4], 10) : parseInt(m3[4], 10);
+    const q = parseCoeff(m3[5]);
+    const b = m3[7] === '-' ? -parseInt(m3[8], 10) : parseInt(m3[8], 10);
+
+    const k = p * q;
+    const c = a * b;
+
+    const term1 = k === 1 ? `${varName1}^2` : k === -1 ? `-${varName1}^2` : `${k}${varName1}^2`;
+    const sign = c >= 0 ? '+' : '-';
+    const slip = c === 0 ? term1 : `${term1}${sign}${Math.abs(c)}`;
+
+    return uaNorm === slip;
+  }
+
+  return false;
 }
 
 // ─── Rule: Sign Swapper (§3.2) ──────────────────────────────────────────────

@@ -38,6 +38,15 @@ const cases = [
   { in: {}, expect: null, label: 'Empty input returns null (no crash)' },
   // Edge: garbage input
   { in: { question: null, userAnswer: undefined, correctAnswer: null }, expect: null, label: 'Garbage input returns null (no crash)' },
+  // Bracketeer expansion cases
+  { in: { question: '6x(x+5)', userAnswer: '6x^2 + 5', correctAnswer: '6x^2 + 30x' }, expect: 'bracketeer', label: 'Bracketeer linear expansion slip A (6x^2+5)' },
+  { in: { question: '6x(x+5)', userAnswer: '6x^2 + 30', correctAnswer: '6x^2 + 30x' }, expect: 'bracketeer', label: 'Bracketeer linear expansion slip B (6x^2+30)' },
+  { in: { question: '6x(x+5)', userAnswer: '6x^2 + 5x', correctAnswer: '6x^2 + 30x' }, expect: 'bracketeer', label: 'Bracketeer linear expansion slip C (6x^2+5x)' },
+  { in: { question: '(2x)(6x+6)', userAnswer: '12x^2 + 6x', correctAnswer: '12x^2 + 12x' }, expect: 'bracketeer', label: 'Bracketeer linear expansion parenthesized (12x^2+6x)' },
+  { in: { question: '(x+3)(x+5)', userAnswer: 'x^2 + 15', correctAnswer: 'x^2 + 8x + 15' }, expect: 'bracketeer', label: 'Bracketeer double bracket FOIL slip (x^2+15)' },
+  { in: { question: '(2x-3)(3x+4)', userAnswer: '6x^2 - 12', correctAnswer: '6x^2 - x - 12' }, expect: 'bracketeer', label: 'Bracketeer double bracket coefficient FOIL slip (6x^2-12)' },
+  { in: { question: '(5) × (x - 3)', userAnswer: '5x - 3', correctAnswer: '5x - 15' }, expect: 'bracketeer', label: 'Bracketeer parenthesized constant multiplier with times operator' },
+  { in: { question: '8 * (x + 6)', userAnswer: '8x + 6', correctAnswer: '8x + 48' }, expect: 'bracketeer', label: 'Bracketeer constant multiplier with asterisk operator' },
 ];
 
 let pass = 0, fail = 0;
