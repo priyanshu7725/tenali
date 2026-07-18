@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useTimer, QuizLayout } from '../App';
+import { useTimer } from '../hooks/useTimer';
+import { QuizLayout } from '../components/QuizLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import './WordSearchApp.css';
 

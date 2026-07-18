@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTimer, QuizLayout } from '../App';
+import { useTimer } from '../hooks/useTimer';
+import { QuizLayout } from '../components/QuizLayout';
 
 // API base URL from environment variables (Vite)
 const API = import.meta.env.VITE_API_BASE_URL || '';
