@@ -21,7 +21,7 @@
  * Progress persistence: Adaptive tables app saves current table progress in localStorage
  */
 
-import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import VoiceAssistant from './components/VoiceAssistant';
 import { motion } from 'framer-motion';
 import OnboardingTour from './components/OnboardingTour';
@@ -73,7 +73,7 @@ import VisualMathLabRedux, {
   AnswerInput,
 } from './VisualMathLabRedux';
 import CoordinateGrid from './components/CoordinateGrid';
-import LanguageDashboard from './language/LanguageDashboard'
+const LanguageDashboard = lazy(() => import('./language/LanguageDashboard'));
 import { VOCAB_CORPUS } from './vocabCorpus'
 import PercentExplanationApp from './PercentExplanationApp'
 import { playSound } from './audioContext'
@@ -42890,7 +42890,9 @@ function App() {
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
         <div className="card">
-          <LanguageDashboard onBack={() => { window.location.href = '/' }} />
+          <Suspense fallback={<div className="loading-state">Loading Language Dashboard...</div>}>
+            <LanguageDashboard onBack={() => { window.location.href = '/' }} />
+          </Suspense>
         </div>
       </div>
     )
