@@ -95,9 +95,15 @@ function extractNormalized(data, url) {
   const topic = isCheckUrl(url);
   if (!topic) return null;
   // Inlined caches for testing — kept in sync with fetchInterceptor.js
-  const cachedQ = _questionCache.get(topic);
+  const cachedQ = _questionCache.get(topic) || {};
   const reqBody = _lastRequestBody.get(topic) || {};
-  const question = data.question ?? data.prompt ?? data.q ?? data.stem ?? data.problem ?? cachedQ?.prompt ?? cachedQ?.question ?? '';
+  let question = data.question ?? data.prompt ?? data.q ?? data.stem ?? data.problem ?? cachedQ?.prompt ?? cachedQ?.question ?? '';
+
+  if (cachedQ.a !== undefined && cachedQ.b !== undefined) {
+    const op = cachedQ.op ?? (topic === 'addition' ? '+' : (topic === 'multiply' ? '×' : '+'));
+    question = `${cachedQ.a} ${op} ${cachedQ.b}`;
+  }
+
   const correctAnswer = data.correctAnswer ?? data.expected ?? data.answer ?? data.display ?? reqBody.correctAnswer ?? reqBody.expected ?? '';
   const userAnswer = data.userAnswer ?? data.answer ?? data.submitted ?? data.studentAnswer ?? reqBody.userAnswer ?? reqBody.submitted ?? reqBody.answer ?? '';
   return { question, userAnswer, correctAnswer, topic };
@@ -121,12 +127,26 @@ const extractCases = [
       data: { correct: false, correctAnswer: 6, message: 'Incorrect' },
       url: 'https://api.example.com/basicarith-api/check',
       setup: () => {
-        _questionCache.set('basicarith', { prompt: '3(x+2)', a: 3, b: 2, op: '×' });
-        _lastRequestBody.set('basicarith', { a: 3, b: 2, op: '×', answer: 8 });
+        _questionCache.set('basicarith', { prompt: '3(x+2)' });
+        _lastRequestBody.set('basicarith', { answer: 8 });
       },
       teardown: () => { _questionCache.clear(); _lastRequestBody.clear(); },
     },
     expect: { question: '3(x+2)', userAnswer: 8, correctAnswer: 6, topic: 'basicarith' },
+  },
+  // NEW: operand reconstruction for word problems
+  {
+    label: 'reconstruct math expression from operands a and b',
+    in: {
+      data: { correct: false, correctAnswer: 65, message: 'Incorrect' },
+      url: 'https://api.example.com/addition-api/check',
+      setup: () => {
+        _questionCache.set('addition', { prompt: 'Alice has 19 apples...', a: 19, b: 46 });
+        _lastRequestBody.set('addition', { answer: 55 });
+      },
+      teardown: () => { _questionCache.clear(); _lastRequestBody.clear(); },
+    },
+    expect: { question: '19 + 46', userAnswer: 55, correctAnswer: 65, topic: 'addition' },
   },
   // NEW: parseRequestBody cases
   {

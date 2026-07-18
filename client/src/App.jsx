@@ -50390,18 +50390,18 @@ function BasicArithApp({ onBack, completedTopics = [], goldMastery = [], markTop
       const res = await fetch(`${API}/basicarith-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({ a: question.a, b: question.b, op: question.op, answer: Number(answer), sessionGoal }) })
       const data = await res.json()
       setIsCorrect(data.correct)
-      if (data.correct) setScore(s => s + 1)
-        (() => {
-          const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
-          if (data.correct) {
-            setFeedback(`Correct! ${question.prompt} = ${data.correctAnswer}`.slice(0, -1) + _ci + `Correct! ${question.prompt} = ${data.correctAnswer}`.slice(-1))
-          } else if (sessionGoal === 'perfect') {
-            setFeedback(`Incorrect. ${question.prompt} = ${data.correctAnswer}` + ' ❌ Perfect Solve ended.')
-            setFinished(true); timer.reset()
-          } else {
-            setFeedback(`Incorrect. ${question.prompt} = ${data.correctAnswer}`)
-          }
-        })()
+      if (data.correct) {
+        setScore(s => s + 1)
+      }
+      const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+      if (data.correct) {
+        setFeedback(`Correct! ${question.prompt} = ${data.correctAnswer}`.slice(0, -1) + _ci + `Correct! ${question.prompt} = ${data.correctAnswer}`.slice(-1))
+      } else if (sessionGoal === 'perfect') {
+        setFeedback(`Incorrect. ${question.prompt} = ${data.correctAnswer}` + ' ❌ Perfect Solve ended.')
+        setFinished(true); timer.reset()
+      } else {
+        setFeedback(`Incorrect. ${question.prompt} = ${data.correctAnswer}`)
+      }
       // Store result with time taken
       setResults(prev => [...prev, {
         question: question.prompt,
@@ -53775,18 +53775,18 @@ function DotProdApp({ onBack, isGoalMode = false }) {
       const r = await fetch(`${API}/dotprod-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({ ...payload, sessionGoal }) })
       const data = await r.json()
       setIsCorrect(data.correct); setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
-        (() => {
-          const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
-          if (data.correct) {
-            setFeedback(`Correct! ${data.display}`.slice(0, -1) + _ci + `Correct! ${data.display}`.slice(-1))
-          } else if (sessionGoal === 'perfect') {
-            setFeedback(`Incorrect. Answer: ${data.display}` + ' ❌ Perfect Solve ended.')
-            setFinished(true); timer.reset()
-          } else {
-            setFeedback(`Incorrect. Answer: ${data.display}`)
-          }
-        })()
+      if (data.correct) {
+        setScore(s => s + 1)
+      }
+      const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+      if (data.correct) {
+        setFeedback(`Correct! ${data.display}`.slice(0, -1) + _ci + `Correct! ${data.display}`.slice(-1))
+      } else if (sessionGoal === 'perfect') {
+        setFeedback(`Incorrect. Answer: ${data.display}` + ' ❌ Perfect Solve ended.')
+        setFinished(true); timer.reset()
+      } else {
+        setFeedback(`Incorrect. Answer: ${data.display}`)
+      }
       setResults(prev => [...prev, { prompt: question.prompt, userAnswer, correctAnswer: data.display, correct: data.correct, time: timeTaken }])
       if (isAdaptive) {
         setAdaptScore(prev => {
@@ -55741,18 +55741,18 @@ function SquaringApp({ onBack, isGoalMode = false }) {
       const r = await fetch(`${API}/squaring-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({ ...question, userAnswer, sessionGoal }) })
       const data = await r.json()
       setIsCorrect(data.correct); setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
-        (() => {
-          const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
-          if (data.correct) {
-            setFeedback(`Correct! ${question.n}² = ${question.answer}`.slice(0, -1) + _ci + `Correct! ${question.n}² = ${question.answer}`.slice(-1))
-          } else if (sessionGoal === 'perfect') {
-            setFeedback(`Incorrect. ${question.display}` + ' ❌ Perfect Solve ended.')
-            setFinished(true); timer.reset()
-          } else {
-            setFeedback(`Incorrect. ${question.display}`)
-          }
-        })()
+      if (data.correct) {
+        setScore(s => s + 1)
+      }
+      const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+      if (data.correct) {
+        setFeedback(`Correct! ${question.n}² = ${question.answer}`.slice(0, -1) + _ci + `Correct! ${question.n}² = ${question.answer}`.slice(-1))
+      } else if (sessionGoal === 'perfect') {
+        setFeedback(`Incorrect. ${question.display}` + ' ❌ Perfect Solve ended.')
+        setFinished(true); timer.reset()
+      } else {
+        setFeedback(`Incorrect. ${question.display}`)
+      }
       setResults(prev => [...prev, { prompt: question.prompt, userAnswer: valFinal.trim(), correctAnswer: String(question.answer), correct: data.correct, time: timeTaken }])
       if (isAdaptive) {
         setAdaptScore(prev => { const next = data.correct ? Math.min(3, prev + 0.25) : Math.max(0, prev - 0.35); adaptScoreRef.current = next; return next })
@@ -56750,18 +56750,18 @@ function SetsApp({ onBack, isGoalMode = false }) {
       const r = await fetch(`${API}/sets-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({ ...payload, sessionGoal }) })
       const data = await r.json()
       setIsCorrect(data.correct); setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
-        (() => {
-          const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
-          if (data.correct) {
-            setFeedback(`Correct! ${data.display}`.slice(0, -1) + _ci + `Correct! ${data.display}`.slice(-1))
-          } else if (sessionGoal === 'perfect') {
-            setFeedback(`Incorrect. Answer: ${data.display}` + ' ❌ Perfect Solve ended.')
-            setFinished(true); timer.reset()
-          } else {
-            setFeedback(`Incorrect. Answer: ${data.display}`)
-          }
-        })()
+      if (data.correct) {
+        setScore(s => s + 1)
+      }
+      const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+      if (data.correct) {
+        setFeedback(`Correct! ${data.display}`.slice(0, -1) + _ci + `Correct! ${data.display}`.slice(-1))
+      } else if (sessionGoal === 'perfect') {
+        setFeedback(`Incorrect. Answer: ${data.display}` + ' ❌ Perfect Solve ended.')
+        setFinished(true); timer.reset()
+      } else {
+        setFeedback(`Incorrect. Answer: ${data.display}`)
+      }
       setResults(prev => [...prev, { prompt: question.prompt, userAnswer: answer.trim(), correctAnswer: data.display, correct: data.correct, time: timeTaken }])
       if (isAdaptive) {
         setAdaptScore(prev => { const next = data.correct ? Math.min(3, prev + 0.25) : Math.max(0, prev - 0.35); adaptScoreRef.current = next; return next })
@@ -56978,18 +56978,18 @@ function SequencesApp({ onBack, isGoalMode = false }) {
       const r = await fetch(`${API}/sequences-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({ ...payload, sessionGoal }) })
       const data = await r.json()
       setIsCorrect(data.correct); setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
-        (() => {
-          const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
-          if (data.correct) {
-            setFeedback(`Correct! Answer: ${data.display}`.slice(0, -1) + _ci + `Correct! Answer: ${data.display}`.slice(-1))
-          } else if (sessionGoal === 'perfect') {
-            setFeedback(`Incorrect. Answer: ${data.display}` + ' ❌ Perfect Solve ended.')
-            setFinished(true); timer.reset()
-          } else {
-            setFeedback(`Incorrect. Answer: ${data.display}`)
-          }
-        })()
+      if (data.correct) {
+        setScore(s => s + 1)
+      }
+      const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+      if (data.correct) {
+        setFeedback(`Correct! Answer: ${data.display}`.slice(0, -1) + _ci + `Correct! Answer: ${data.display}`.slice(-1))
+      } else if (sessionGoal === 'perfect') {
+        setFeedback(`Incorrect. Answer: ${data.display}` + ' ❌ Perfect Solve ended.')
+        setFinished(true); timer.reset()
+      } else {
+        setFeedback(`Incorrect. Answer: ${data.display}`)
+      }
       setResults(prev => [...prev, { prompt: question.prompt, userAnswer: answer.trim(), correctAnswer: data.display, correct: data.correct, time: timeTaken }])
       if (isAdaptive) {
         setAdaptScore(prev => { const next = data.correct ? Math.min(3, prev + 0.25) : Math.max(0, prev - 0.35); adaptScoreRef.current = next; return next })
@@ -57229,18 +57229,18 @@ function RatioApp({ onBack, completedTopics = [], goldMastery = [], markTopicCom
       const data = await r.json()
       setIsCorrect(data.correct)
       setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
-        (() => {
-          const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
-          if (data.correct) {
-            setFeedback(`Correct! ${data.display}`.slice(0, -1) + _ci + `Correct! ${data.display}`.slice(-1))
-          } else if (sessionGoal === 'perfect') {
-            setFeedback(`Incorrect. Answer: ${data.display}` + ' ❌ Perfect Solve ended.')
-            setFinished(true); timer.reset()
-          } else {
-            setFeedback(`Incorrect. Answer: ${data.display}`)
-          }
-        })()
+      if (data.correct) {
+        setScore(s => s + 1)
+      }
+      const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+      if (data.correct) {
+        setFeedback(`Correct! ${data.display}`.slice(0, -1) + _ci + `Correct! ${data.display}`.slice(-1))
+      } else if (sessionGoal === 'perfect') {
+        setFeedback(`Incorrect. Answer: ${data.display}` + ' ❌ Perfect Solve ended.')
+        setFinished(true); timer.reset()
+      } else {
+        setFeedback(`Incorrect. Answer: ${data.display}`)
+      }
       setResults(prev => [...prev, { prompt: question.prompt, userAnswer: answer.trim(), correctAnswer: data.display, correct: data.correct, time: timeTaken }])
       if (isAdaptive) {
         setAdaptScore(prev => { const next = data.correct ? Math.min(3, prev + 0.25) : Math.max(0, prev - 0.35); adaptScoreRef.current = next; return next })
@@ -60114,6 +60114,25 @@ function SqrtApp({ onBack, isGoalMode = false }) {
   )
 }
 
+function coeffsToPolyStr(coeffs) {
+  const parts = [];
+  const numCoeffs = coeffs.map(Number);
+  for (let i = numCoeffs.length - 1; i >= 0; i--) {
+    const c = numCoeffs[i];
+    if (c === 0 && numCoeffs.length > 1) continue;
+    const sup = (n) => String(n).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
+    const varPart = i === 0 ? '' : i === 1 ? 'x' : `x${sup(i)}`;
+    if (parts.length === 0) {
+      parts.push(c === 1 && i > 0 ? varPart : c === -1 && i > 0 ? `-${varPart}` : `${c}${varPart}`);
+    } else {
+      const sign = c > 0 ? '+' : '-';
+      const abs = Math.abs(c);
+      parts.push(`${sign} ${abs === 1 && i > 0 ? varPart : `${abs}${varPart}`}`);
+    }
+  }
+  return parts.join(' ') || '0';
+}
+
 /* ── Polynomial Multiplication App ──────────────────── */
 
 /**
@@ -60128,7 +60147,7 @@ function SqrtApp({ onBack, isGoalMode = false }) {
  * @param {Object} props
  * @param {Function} props.onBack - Callback to return to home menu
  */
-function PolyMulApp({ onBack }) {
+function PolyMulApp({ onBack, isGoalMode = false }) {
   // Difficulty level: 'easy' | 'medium' | 'hard' | 'extrahard'
   const [difficulty, setDifficulty] = useState('easy')
   // Adaptive mode enabled?
@@ -60246,22 +60265,22 @@ function PolyMulApp({ onBack }) {
     // POST to backend to validate polynomial multiplication result
     const res = await fetch(`${API}/polymul-api/check`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p1: question.p1, p2: question.p2, userCoeffs: userCoeffs.map(Number) }),
+      body: JSON.stringify({ p1: question.p1, p2: question.p2, userCoeffs: userCoeffs.map(Number), userAnswer: userAnswerStr }),
     })
     const data = await res.json()
     setIsCorrect(data.correct)
-    if (data.correct) setScore(s => s + 1)
-      (() => {
-        const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
-        if (data.correct) {
-          setFeedback(`Correct! ${question.productDisplay}`.slice(0, -1) + _ci + `Correct! ${question.productDisplay}`.slice(-1))
-        } else if (sessionGoal === 'perfect') {
-          setFeedback(`Incorrect. Answer: ${data.correctDisplay}` + ' ❌ Perfect Solve ended.')
-          setFinished(true); timer.reset()
-        } else {
-          setFeedback(`Incorrect. Answer: ${data.correctDisplay}`)
-        }
-      })()
+    if (data.correct) {
+      setScore(s => s + 1)
+    }
+    const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+    if (data.correct) {
+      setFeedback(`Correct! ${question.productDisplay}`.slice(0, -1) + _ci + `Correct! ${question.productDisplay}`.slice(-1))
+    } else if (sessionGoal === 'perfect') {
+      setFeedback(`Incorrect. Answer: ${data.correctDisplay}` + ' ❌ Perfect Solve ended.')
+      setFinished(true); timer.reset()
+    } else {
+      setFeedback(`Incorrect. Answer: ${data.correctDisplay}`)
+    }
     setResults(prev => [...prev, {
       question: `(${question.p1Display})(${question.p2Display})`,
       userAnswer: userCoeffs.join(', '),
@@ -66177,7 +66196,7 @@ function RiyaApp({ onBack, isGoalMode = false }) {
  *     y = mx + C for each. If either y is out of the plot window [-7, 7],
  *     retry. This guarantees a tidy integer answer and visible points.
  */
-function TatsavitLineApp({ onBack }) {
+function TatsavitLineApp({ onBack, isGoalMode = false }) {
   // `round` is just a counter that forces regeneration on Next
   const [round, setRound] = useState(0)
   // Point coordinates are stored as strings so the inputs stay editable

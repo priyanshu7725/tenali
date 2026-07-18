@@ -18,8 +18,8 @@ const cases = [
   { in: { question: '0.5 + 0.3', userAnswer: '0.08', correctAnswer: '0.8' }, expect: 'decimal-drifter', label: 'Decimal Drifter example trigger (spec §3.3)' },
   // Decimal Drifter — should NOT trigger
   { in: { question: '0.5 + 0.3', userAnswer: '0.7', correctAnswer: '0.8' }, expect: null, label: 'Decimal Drifter example non-trigger (spec §3.3)' },
-  // Carry Crasher — gated off, should NOT trigger even when matching
-  { in: { question: '47 + 38', userAnswer: '75', correctAnswer: '85' }, expect: null, label: 'Carry Crasher gated off (still no trigger despite matching pattern)' },
+  // Carry Crasher — enabled, should trigger when matching
+  { in: { question: '47 + 38', userAnswer: '75', correctAnswer: '85' }, expect: 'carry-crasher', label: 'Carry Crasher enabled (triggers when matching pattern)' },
   // Order: Bracketeer and Sign Swapper both could match this; in v0.2
   // we accept either result. The "first-match-wins" rule resolves in favor
   // of Bracketeer when Bracketeer matches. Here the student's answer (-3x+-6)

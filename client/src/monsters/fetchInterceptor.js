@@ -173,11 +173,18 @@ function extractNormalized(data, url) {
   if (!topic) return null;
 
   // Question text — try the response first, then the cached /question
-  const cachedQ = _questionCache.get(topic);
-  const question =
+  const cachedQ = _questionCache.get(topic) || {};
+  let question =
     data.question ?? data.prompt ?? data.q ?? data.stem ?? data.problem ??
     cachedQ?.prompt ?? cachedQ?.question ??
     '';
+
+  // If operands are present in the cached question, reconstruct a clean arithmetic expression
+  // so the classifier rules (such as Carry Crasher) can parse it reliably regardless of word templates.
+  if (cachedQ.a !== undefined && cachedQ.b !== undefined) {
+    const op = cachedQ.op ?? (topic === 'addition' ? '+' : (topic === 'multiply' ? '×' : '+'));
+    question = `${cachedQ.a} ${op} ${cachedQ.b}`;
+  }
 
   // Student answer and some endpoint-specific correct-answer fallbacks come
   // from the captured check request.
