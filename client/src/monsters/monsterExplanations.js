@@ -23,8 +23,8 @@ export const MONSTER_EXPLANATIONS = {
     tagline: 'Forgot to share with everyone inside.',
     description: 'Multiply the outside number by *every* term inside!',
     tips: [
-      'Count the terms inside first.',
-      'Multiply both numbers, not just one!'
+      'Count the terms inside the brackets first so you know how many times to multiply.',
+      'Multiply the outside number by *every* single term inside so nobody gets left out!'
     ],
   },
 
@@ -33,8 +33,8 @@ export const MONSTER_EXPLANATIONS = {
     tagline: 'Mixed up your + and −.',
     description: 'Watch out! The Sign Swapper flips your positive (+) and negative (-) signs.',
     tips: [
-      'Draw a circle around the sign of your answer.',
-      'Double check your plus/minus at the end!'
+      'Draw a circle around the sign (+ or -) in the question, then check that your answer matches it at the end.',
+      'Double check your plus/minus rules, especially when multiplying two negative numbers together.'
     ],
   },
 
@@ -43,8 +43,8 @@ export const MONSTER_EXPLANATIONS = {
     tagline: 'The point jumped to the wrong spot.',
     description: 'The decimal point slid into the wrong spot, making the number too big or too small.',
     tips: [
-      'Count the decimal places in the question.',
-      'Read your answer out loud to catch drifts!'
+      'Count the total decimal places in the question to know exactly where your dot should land.',
+      'Read your answer out loud (like "twelve point five") to check if the size makes sense.'
     ],
   },
 
@@ -53,8 +53,8 @@ export const MONSTER_EXPLANATIONS = {
     tagline: 'The carried number got lost.',
     description: 'A carried number was dropped or forgotten during addition or subtraction.',
     tips: [
-      'Always write the carried number above.',
-      'Add columns one by one from right to left.'
+      'Always write the carried number above the next column so you do not forget to add it.',
+      'Add the columns one by one from right to left, and cross out the carry once it is added.'
     ],
   },
 };

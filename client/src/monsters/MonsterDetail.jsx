@@ -26,7 +26,7 @@
  *   - onStartCure: (monsterId, topic) => void
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getMonsterExplanation,
   getMonsterName,
@@ -354,7 +354,7 @@ function getAllTopics(monsterId) {
   const counts = {};
   for (const e of state.log) {
     if (e.monsterId === monsterId && e.topic) {
-      counts[e.topic] = (counts[e.topic] || 0) + 1;
+    counts[e.topic] = (counts[e.topic] || 0) + 1;
     }
   }
   return Object.entries(counts)
@@ -367,6 +367,35 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
   const [signSwapperStep, setSignSwapperStep] = useState(0);
   const [decimalPlace, setDecimalPlace] = useState(0);
   const [carryCrasherMode, setCarryCrasherMode] = useState('save');
+  const [frogValue, setFrogValue] = useState(0);
+  const [isHopping, setIsHopping] = useState(false);
+
+  const stepPositions = useMemo(() => [0, -3, 2, -2], []);
+
+  useEffect(() => {
+    if (monsterId !== 'sign-swapper') return;
+    
+    const target = stepPositions[signSwapperStep];
+    
+    setIsHopping(true);
+    const interval = setInterval(() => {
+      setFrogValue((prev) => {
+        if (prev === target) {
+          clearInterval(interval);
+          setIsHopping(false);
+          return prev;
+        }
+        const nextVal = prev < target ? prev + 1 : prev - 1;
+        if (nextVal === target) {
+          clearInterval(interval);
+          setIsHopping(false);
+        }
+        return nextVal;
+      });
+    }, 200); // 200ms per hop for snappy but visible steps
+    
+    return () => clearInterval(interval);
+  }, [signSwapperStep, monsterId, stepPositions]);
 
   // ─── 1. THE BRACKETEER DEMO ───
   if (monsterId === 'bracketeer') {
@@ -454,9 +483,7 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
   // ─── 2. THE SIGN SWAPPER DEMO ───
   if (monsterId === 'sign-swapper') {
     const numberLineNodes = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
-    const stepPositions = [0, -3, 2, -2];
-    const currentVal = stepPositions[signSwapperStep];
-    const frogIndex = numberLineNodes.indexOf(currentVal);
+    const frogIndex = numberLineNodes.indexOf(frogValue);
     const frogLeftPercent = (frogIndex / (numberLineNodes.length - 1)) * 100;
 
     const stepTexts = [
@@ -467,6 +494,7 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
     ];
 
     const nextStep = () => {
+      if (isHopping) return;
       setSignSwapperStep((prev) => (prev + 1) % 4);
     };
 
@@ -503,11 +531,11 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
                 left: `calc(${frogLeftPercent}% - 14px)`, 
                 top: '-15px', 
                 fontSize: '28px', 
-                transition: 'left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.2s',
-                animation: signSwapperStep === 3 ? 'shake 0.5s infinite' : 'none'
+                transition: 'left 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.2s',
+                animation: signSwapperStep === 3 && !isHopping ? 'shake 0.5s infinite' : 'none'
               }}
             >
-              {signSwapperStep === 3 ? '😵' : '🐸'}
+              {signSwapperStep === 3 && !isHopping ? '😵' : '🐸'}
             </div>
           </div>
 
@@ -519,9 +547,10 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
             <button 
               className="monster-detail-btn monster-detail-btn-primary" 
               onClick={nextStep}
+              disabled={isHopping}
               style={{ flex: 1, padding: '10px', fontSize: '14px', background: colors.primary }}
             >
-              {signSwapperStep === 3 ? '🔄 Try Again' : '🐸 Hop!'}
+              {isHopping ? '🐸 Hopping...' : signSwapperStep === 3 ? '🔄 Try Again' : '🐸 Hop!'}
             </button>
           </div>
         </div>
