@@ -377,6 +377,13 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
     
     const target = stepPositions[signSwapperStep];
     
+    if (signSwapperStep === 3) {
+      // Instant switch for the Sign Swapper ZAP!
+      setFrogValue(target);
+      setIsHopping(false);
+      return;
+    }
+    
     setIsHopping(true);
     const interval = setInterval(() => {
       setFrogValue((prev) => {
@@ -531,7 +538,7 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
                 left: `calc(${frogLeftPercent}% - 14px)`, 
                 top: '-15px', 
                 fontSize: '28px', 
-                transition: 'left 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.2s',
+                transition: signSwapperStep === 3 ? 'none' : 'left 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.2s',
                 animation: signSwapperStep === 3 && !isHopping ? 'shake 0.5s infinite' : 'none'
               }}
             >
