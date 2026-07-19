@@ -2,7 +2,7 @@
  * MonsterDetail.jsx
  *
  * Full explanation view rendered inside HallPanel when a MonsterCard is
- * tapped. Shows the monster's name, tagline, full description, tips,
+ * tapped. Shows the monster's name, tagline, full description,
  * statistics (breach count, last attempt, cure history), and the
  * "Start Cure" CTA.
  *
@@ -12,7 +12,6 @@
  *   - Hero with monster blob + name + tagline
  *   - Stats row: breach count, last attempt, total cures (and successful)
  *   - Description paragraph
- *   - Tips as bullet list
  *   - Two actions: "Start Cure" (calls onStartCure) and "Back to Hall" (handled
  *     by HallPanel via the back button in the header — but we also support an
  *     explicit back button for usability)
@@ -36,10 +35,10 @@ import { load } from './monsterStore.js';
 
 // Color per monster (matches MonsterCard and MonsterToast)
 const MONSTER_COLORS = {
-  'bracketeer':     { primary: '#5b8def', secondary: '#3a6fce', emoji: '🎯' },
-  'sign-swapper':   { primary: '#ef5b5b', secondary: '#ce3a3a', emoji: '⚡' },
-  'decimal-drifter':{ primary: '#f0a500', secondary: '#c78700', emoji: '🌊' },
-  'carry-crasher':  { primary: '#9b59b6', secondary: '#7d3fa0', emoji: '💥' },
+  'bracketeer': { primary: '#5b8def', secondary: '#3a6fce', emoji: '🎯' },
+  'sign-swapper': { primary: '#ef5b5b', secondary: '#ce3a3a', emoji: '⚡' },
+  'decimal-drifter': { primary: '#f0a500', secondary: '#c78700', emoji: '🌊' },
+  'carry-crasher': { primary: '#9b59b6', secondary: '#7d3fa0', emoji: '💥' },
 };
 
 function formatRelativeTime(ms) {
@@ -150,15 +149,6 @@ function injectDetailStyles() {
       font-size: 15px;
       line-height: 1.6;
       margin: 0;
-    }
-    .monster-detail-tips {
-      margin: 0;
-      padding-left: 20px;
-    }
-    .monster-detail-tips li {
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 8px;
     }
     .monster-detail-actions {
       display: flex;
@@ -295,27 +285,6 @@ function injectDetailStyles() {
       25% { transform: translateX(-2px) rotate(-1deg); }
       75% { transform: translateX(2px) rotate(1deg); }
     }
-    .monster-tips-grid {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    .monster-tip-card {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      padding: 10px 14px;
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-      font-size: 13px;
-    }
-    .monster-tip-card p {
-      margin: 0;
-      line-height: 1.4;
-      color: rgba(255, 245, 230, 0.85);
-    }
   `;
 
   const style = document.createElement('style');
@@ -354,7 +323,7 @@ function getAllTopics(monsterId) {
   const counts = {};
   for (const e of state.log) {
     if (e.monsterId === monsterId && e.topic) {
-    counts[e.topic] = (counts[e.topic] || 0) + 1;
+      counts[e.topic] = (counts[e.topic] || 0) + 1;
     }
   }
   return Object.entries(counts)
@@ -374,16 +343,16 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
 
   useEffect(() => {
     if (monsterId !== 'sign-swapper') return;
-    
+
     const target = stepPositions[signSwapperStep];
-    
+
     if (signSwapperStep === 3) {
       // Instant switch for the Sign Swapper ZAP!
       setFrogValue(target);
       setIsHopping(false);
       return;
     }
-    
+
     setIsHopping(true);
     const interval = setInterval(() => {
       setFrogValue((prev) => {
@@ -400,7 +369,7 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
         return nextVal;
       });
     }, 200); // 200ms per hop for snappy but visible steps
-    
+
     return () => clearInterval(interval);
   }, [signSwapperStep, monsterId, stepPositions]);
 
@@ -408,10 +377,6 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
   if (monsterId === 'bracketeer') {
     return (
       <div className="monster-demo-box" style={{ borderColor: colors.primary }}>
-        <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>See it in action:</span>
-          <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>Interactive Play</span>
-        </h4>
         <div className="monster-demo-toggles">
           <button
             className="monster-demo-toggle-btn"
@@ -478,8 +443,8 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
           </div>
 
           <p className="monster-demo-text">
-            {bracketeerMode === 'correct' 
-              ? '🎉 Correct: Both terms got multiplied!' 
+            {bracketeerMode === 'correct'
+              ? '🎉 Correct: Both terms got multiplied!'
               : '😢 Oops: The 5 was ignored by the 3!'}
           </p>
         </div>
@@ -507,10 +472,6 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
 
     return (
       <div className="monster-demo-box" style={{ borderColor: colors.primary }}>
-        <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>Hop on the Number Line:</span>
-          <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>Interactive Play</span>
-        </h4>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="monster-demo-display" style={{ margin: '8px 0', color: signSwapperStep === 3 ? '#ff6b6b' : '#ede8e3' }}>
@@ -522,7 +483,7 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
 
           <div style={{ position: 'relative', background: 'rgba(0,0,0,0.3)', padding: '12px 6px', borderRadius: '12px', height: '40px', marginTop: '16px' }}>
             <div style={{ position: 'absolute', left: '12px', right: '12px', top: '23px', height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px' }}></div>
-            
+
             <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', width: '100%', height: '100%', alignItems: 'center' }}>
               {numberLineNodes.map((n) => (
                 <div key={n} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1 }}>
@@ -532,12 +493,12 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
               ))}
             </div>
 
-            <div 
-              style={{ 
-                position: 'absolute', 
-                left: `calc(${frogLeftPercent}% - 14px)`, 
-                top: '-15px', 
-                fontSize: '28px', 
+            <div
+              style={{
+                position: 'absolute',
+                left: `calc(${frogLeftPercent}% - 14px)`,
+                top: '-15px',
+                fontSize: '28px',
                 transition: signSwapperStep === 3 ? 'none' : 'left 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.2s',
                 animation: signSwapperStep === 3 && !isHopping ? 'shake 0.5s infinite' : 'none'
               }}
@@ -551,8 +512,8 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
           </p>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
-              className="monster-detail-btn monster-detail-btn-primary" 
+            <button
+              className="monster-detail-btn monster-detail-btn-primary"
               onClick={nextStep}
               disabled={isHopping}
               style={{ flex: 1, padding: '10px', fontSize: '14px', background: colors.primary }}
@@ -578,16 +539,12 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
 
     return (
       <div className="monster-demo-box" style={{ borderColor: colors.primary }}>
-        <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>Slide the Decimal Point:</span>
-          <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>Interactive Play</span>
-        </h4>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
           <div className="monster-demo-display" style={{ letterSpacing: '4px', fontSize: '32px', height: '40px', display: 'flex', alignItems: 'center' }}>
             {currentScale.text.split('').map((char, index) => (
-              <span 
-                key={index} 
+              <span
+                key={index}
                 style={char === '.' ? { color: colors.primary, fontWeight: 'bold', fontSize: '40px', transform: 'scale(1.2)', display: 'inline-block' } : {}}
               >
                 {char}
@@ -605,21 +562,21 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
             style={{ width: '100%', cursor: 'pointer', accentColor: colors.primary }}
           />
 
-          <div style={{ 
-            height: '110px', 
-            display: 'flex', 
-            alignItems: 'flex-end', 
-            justifyContent: 'center', 
+          <div style={{
+            height: '110px',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
             margin: '12px 0',
             width: '100%',
             background: 'rgba(0,0,0,0.15)',
             borderRadius: '8px',
             padding: '12px'
           }}>
-            <div style={{ 
-              fontSize: currentScale.size, 
-              lineHeight: 1, 
-              transition: 'font-size 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' 
+            <div style={{
+              fontSize: currentScale.size,
+              lineHeight: 1,
+              transition: 'font-size 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
             }}>
               {currentScale.emoji}
             </div>
@@ -640,10 +597,6 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
   if (monsterId === 'carry-crasher') {
     return (
       <div className="monster-demo-box" style={{ borderColor: colors.primary }}>
-        <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>Column Carry Helper:</span>
-          <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>Interactive Play</span>
-        </h4>
 
         <div className="monster-demo-toggles">
           <button
@@ -679,8 +632,8 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
           </div>
 
           <p className="monster-demo-text" style={{ margin: '0', minHeight: '36px' }}>
-            {carryCrasherMode === 'save' 
-              ? '🎉 The 1 is carried to the tens column! (Answer: 42)' 
+            {carryCrasherMode === 'save'
+              ? '🎉 The 1 is carried to the tens column! (Answer: 42)'
               : '💥 Oops: The carry was dropped! (Answer: 32)'}
           </p>
         </div>
@@ -737,15 +690,15 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
 
       <div className="monster-detail-stats">
         <div className="monster-detail-stat">
-          <span className="monster-detail-stat-value" style={healedState === 'healed' ? {color:'#ffd700'} : healedState === 'warning' ? {color:'var(--clr-accent)'} : {}}>{breachCount}</span>
+          <span className="monster-detail-stat-value" style={healedState === 'healed' ? { color: '#ffd700' } : healedState === 'warning' ? { color: 'var(--clr-accent)' } : {}}>{breachCount}</span>
           <span className="monster-detail-stat-label">Breaches</span>
         </div>
         <div className="monster-detail-stat">
-          <span className="monster-detail-stat-value" style={healedState === 'healed' ? {color:'#ffd700'} : healedState === 'warning' ? {color:'var(--clr-accent)'} : {}}>{formatRelativeTime(lastAttempt)}</span>
+          <span className="monster-detail-stat-value" style={healedState === 'healed' ? { color: '#ffd700' } : healedState === 'warning' ? { color: 'var(--clr-accent)' } : {}}>{formatRelativeTime(lastAttempt)}</span>
           <span className="monster-detail-stat-label">Last Seen</span>
         </div>
         <div className="monster-detail-stat">
-          <span className="monster-detail-stat-value" style={healedState === 'healed' ? {color:'#ffd700'} : healedState === 'warning' ? {color:'var(--clr-accent)'} : {}}>{curesSuccessful}/{curesTotal}</span>
+          <span className="monster-detail-stat-value" style={healedState === 'healed' ? { color: '#ffd700' } : healedState === 'warning' ? { color: 'var(--clr-accent)' } : {}}>{curesSuccessful}/{curesTotal}</span>
           <span className="monster-detail-stat-label">Cures</span>
         </div>
       </div>
@@ -755,18 +708,6 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
         <h3 style={{ fontFamily: 'var(--font-display)' }}>What it does</h3>
         <p className="monster-detail-description">{entry.description}</p>
         <InteractiveMonsterDemo monsterId={monsterId} colors={colors} />
-      </div>
-
-      <div className="monster-detail-section">
-        <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: '8px' }}>Tips for next time</h3>
-        <div className="monster-tips-grid">
-          {entry.tips.map((tip, i) => (
-            <div key={i} className="monster-tip-card">
-              <span style={{ fontSize: '16px', lineHeight: 1 }}>💡</span>
-              <p>{tip}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       <div className="monster-detail-actions">

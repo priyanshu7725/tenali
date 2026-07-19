@@ -41,7 +41,7 @@
 
 **What ships:**
 - `MONSTER_EXPLANATIONS` keyed by monsterId (4 entries: bracketeer, sign-swapper, decimal-drifter, carry-crasher)
-- Each entry: `{ name, tagline, description, tips: string[] }`
+- Each entry: `{ name, tagline, description}`
 - 3 helper exports: `getMonsterExplanation(id)`, `getMonsterName(id)`, `getMonsterTagline(id)`
 - Helpers return safe defaults (null / 'Unknown Monster' / '') for unknown ids — never throw
 
@@ -317,7 +317,6 @@ E. **Promise.resolve wrapping.** Explicit async contract for the patched fetch r
 - Hero section: 80×80 pulsing blob + name + tagline, gradient backdrop
 - 3-stat row: Breaches / Last Seen / Cures (success/total)
 - Description paragraph (from `getMonsterExplanation`)
-- Tips as `<ul>` (from explanation.tips array)
 - Topic selector: defaulted to most-frequent historical topic for this monster
   - Computed via `getSuggestedTopic(monsterId)` which scans `state.log`
   - Falls back to empty (Start Cure disabled) when no history
@@ -347,7 +346,7 @@ E. **Promise.resolve wrapping.** Explicit async contract for the patched fetch r
 - `hallPanel.test.cjs`: 31 source-level checks, all pass:
   - HallPanel: exports, imports, early-return, Escape handler, backdrop click, empty state, MonsterCard grid, detail branch, onStartCure passthrough
   - MonsterCard: exports, unseen/seen states, disabled prop, cure badge, blob with emoji
-  - MonsterDetail: exports, explanation usage, tips list, Start Cure button, 3-stat row, suggested topic computation, disabled-when-no-topic
+  - MonsterDetail: exports, explanation usage, Start Cure button, 3-stat row, suggested topic computation, disabled-when-no-topic
   - App.jsx: HallPanel import, monsterLog hydration, hallOpen state, both event listeners, HallPanel mount, MonsterToast onOpenHall
 - `monsterToast.parse.cjs`: 5/5 files parse cleanly (added HallPanel/Card/Detail)
 
@@ -417,7 +416,7 @@ E. **Promise.resolve wrapping.** Explicit async contract for the patched fetch r
 2. Click "View Hall →" → Hall opens: **"Hall of Silly Mistakes"** subtitle: **"1 of 4 monsters fed"** ✓
 3. Bracketeer card shows: 🎯 emoji, "Breached 1 time · last just now", active (not silhouette) ✓
 4. Other 3 monsters: silhouettes, "Not yet met", disabled ✓
-5. Click Bracketeer card → MonsterDetail opens with stats (1 breach, just now, 0/0 cures) + description + tips ✓
+5. Click Bracketeer card → MonsterDetail opens with stats (1 breach, just now, 0/0 cures) + description ✓
 6. Click "Start Cure →" → CureFlow opens: **"Cure run · The Bracketeer"** / **"Practice the pattern, not the panic."** ✓
 7. Question 1: `3(x+2)` (seeded history entry) ✓
 8. Submit correct answer `3x+6` → feedback: **"Correct — keep that pattern."** ✓

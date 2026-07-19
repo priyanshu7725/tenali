@@ -11,7 +11,6 @@
  *   - name:        Display name (e.g. "The Bracketeer")
  *   - tagline:     One-line mood (e.g. "Forgot to share with everyone inside.")
  *   - description: Three-sentence pedagogical mini-lesson.
- *   - tips:        Two practical tips for the cure / next-attempt.
  *
  * Keep the language second-person and concrete. The student should read it
  * once and understand the mistake. Author: P. Sole sign-off authority: P.
@@ -22,40 +21,24 @@ export const MONSTER_EXPLANATIONS = {
     name: 'The Bracketeer',
     tagline: 'Forgot to share with everyone inside.',
     description: 'Multiply the outside number by *every* term inside!',
-    tips: [
-      'Count the terms inside the brackets first so you know how many times to multiply.',
-      'Multiply the outside number by *every* single term inside so nobody gets left out!'
-    ],
   },
 
   'sign-swapper': {
     name: 'The Sign Swapper',
     tagline: 'Mixed up your + and −.',
     description: 'Watch out! The Sign Swapper flips your positive (+) and negative (-) signs.',
-    tips: [
-      'Draw a circle around the sign (+ or -) in the question, then check that your answer matches it at the end.',
-      'Double check your plus/minus rules, especially when multiplying two negative numbers together.'
-    ],
   },
 
   'decimal-drifter': {
     name: 'The Decimal Drifter',
     tagline: 'The point jumped to the wrong spot.',
     description: 'The decimal point slid into the wrong spot, making the number too big or too small.',
-    tips: [
-      'Count the total decimal places in the question to know exactly where your dot should land.',
-      'Read your answer out loud (like "twelve point five") to check if the size makes sense.'
-    ],
   },
 
   'carry-crasher': {
     name: 'The Carry Crasher',
     tagline: 'The carried number got lost.',
     description: 'A carried number was dropped or forgotten during addition or subtraction.',
-    tips: [
-      'Always write the carried number above the next column so you do not forget to add it.',
-      'Add the columns one by one from right to left, and cross out the carry once it is added.'
-    ],
   },
 };
 
