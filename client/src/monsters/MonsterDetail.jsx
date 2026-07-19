@@ -212,6 +212,110 @@ function injectDetailStyles() {
       font-size: 14px;
       font-family: inherit;
     }
+
+    /* Interactive Playgrounds for Kids */
+    .monster-demo-box {
+      background: rgba(0, 0, 0, 0.2);
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 12px;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(8px);
+    }
+    .monster-demo-toggles {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      justify-content: center;
+    }
+    .monster-demo-toggle-btn {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 30px;
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--clr-text, #ede8e3);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .monster-demo-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+    }
+    .monster-demo-display {
+      font-size: 26px;
+      text-align: center;
+      margin: 12px 0;
+      font-family: var(--font-display), inherit;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .monster-demo-text {
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255, 245, 230, 0.85);
+      line-height: 1.5;
+      margin: 12px 0 0 0;
+    }
+    .bracketeer-visual-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+    }
+    .bracketeer-visual-math {
+      font-size: 32px;
+      font-family: var(--font-display), monospace;
+      letter-spacing: 2px;
+    }
+    .bracketeer-multiplier {
+      color: #ffd700;
+      font-weight: bold;
+    }
+    .bracketeer-brackets {
+      color: #a78bfa;
+    }
+    .bracketeer-term-a {
+      color: #38bdf8;
+    }
+    .bracketeer-term-b {
+      color: #fb923c;
+      transition: color 0.3s ease;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px) rotate(-1deg); }
+      75% { transform: translateX(2px) rotate(1deg); }
+    }
+    .monster-tips-grid {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .monster-tip-card {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 13px;
+    }
+    .monster-tip-card p {
+      margin: 0;
+      line-height: 1.4;
+      color: rgba(255, 245, 230, 0.85);
+    }
   `;
 
   const style = document.createElement('style');
@@ -256,6 +360,299 @@ function getAllTopics(monsterId) {
   return Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
     .map(([topic]) => topic);
+}
+
+function InteractiveMonsterDemo({ monsterId, colors }) {
+  const [bracketeerMode, setBracketeerMode] = useState('correct');
+  const [signSwapperStep, setSignSwapperStep] = useState(0);
+  const [decimalPlace, setDecimalPlace] = useState(0);
+  const [carryCrasherMode, setCarryCrasherMode] = useState('save');
+
+  // ─── 1. THE BRACKETEER DEMO ───
+  if (monsterId === 'bracketeer') {
+    return (
+      <div className="monster-demo-box" style={{ borderColor: colors.primary }}>
+        <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>See it in action:</span>
+          <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>Interactive Play</span>
+        </h4>
+        <div className="monster-demo-toggles">
+          <button
+            className="monster-demo-toggle-btn"
+            onClick={() => setBracketeerMode('correct')}
+            style={bracketeerMode === 'correct' ? { background: '#2ecc71', color: '#fff', borderColor: '#2ecc71' } : {}}
+          >
+            🌟 Correct Way
+          </button>
+          <button
+            className="monster-demo-toggle-btn"
+            onClick={() => setBracketeerMode('wrong')}
+            style={bracketeerMode === 'wrong' ? { background: '#e74c3c', color: '#fff', borderColor: '#e74c3c' } : {}}
+          >
+            👾 Bracketeer's Way
+          </button>
+        </div>
+
+        <div className="bracketeer-visual-container">
+          <div className="bracketeer-visual-math">
+            <span className="bracketeer-multiplier">3</span>
+            <span> × </span>
+            <span className="bracketeer-brackets">
+              (<span className="bracketeer-term-a">x</span> + <span className="bracketeer-term-b" style={bracketeerMode === 'wrong' ? { color: '#ff6b6b', fontWeight: 'bold', textDecoration: 'underline' } : {}}>5</span>)
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', height: '40px', position: 'relative', margin: '8px 0' }}>
+            {bracketeerMode === 'correct' ? (
+              <svg width="140" height="40" style={{ pointerEvents: 'none' }}>
+                <path d="M 20,5 Q 40,25 70,5" fill="none" stroke="#2ecc71" strokeWidth="3" markerEnd="url(#arrow)" />
+                <path d="M 20,5 Q 60,35 120,5" fill="none" stroke="#2ecc71" strokeWidth="3" markerEnd="url(#arrow)" />
+                <defs>
+                  <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2ecc71" />
+                  </marker>
+                </defs>
+              </svg>
+            ) : (
+              <svg width="140" height="40" style={{ pointerEvents: 'none' }}>
+                <path d="M 20,5 Q 40,25 70,5" fill="none" stroke="#2ecc71" strokeWidth="3" markerEnd="url(#arrow-green)" />
+                <path d="M 20,5 Q 60,35 120,5" fill="none" stroke="#95a5a6" strokeWidth="2" strokeDasharray="4" />
+                <defs>
+                  <marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2ecc71" />
+                  </marker>
+                </defs>
+              </svg>
+            )}
+            {bracketeerMode === 'wrong' && (
+              <span style={{ position: 'absolute', right: '10px', top: '10px', fontSize: '18px', animation: 'bounce 1s infinite' }}>😴</span>
+            )}
+          </div>
+
+          <div className="monster-demo-display">
+            {bracketeerMode === 'correct' ? (
+              <div style={{ color: '#2ecc71' }}>
+                3 × x + 3 × 5 = <strong style={{ textDecoration: 'underline' }}>3x + 15</strong>
+              </div>
+            ) : (
+              <div style={{ color: '#ff6b6b' }}>
+                3 × x + 5 = <strong style={{ textDecoration: 'underline' }}>3x + 5</strong>
+              </div>
+            )}
+          </div>
+
+          <p className="monster-demo-text">
+            {bracketeerMode === 'correct' 
+              ? '🎉 Correct: Both terms got multiplied!' 
+              : '😢 Oops: The 5 was ignored by the 3!'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── 2. THE SIGN SWAPPER DEMO ───
+  if (monsterId === 'sign-swapper') {
+    const numberLineNodes = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
+    const stepPositions = [0, -3, 2, -2];
+    const currentVal = stepPositions[signSwapperStep];
+    const frogIndex = numberLineNodes.indexOf(currentVal);
+    const frogLeftPercent = (frogIndex / (numberLineNodes.length - 1)) * 100;
+
+    const stepTexts = [
+      'Solve -3 + 5 on the number line!',
+      'Start at -3 🐸',
+      'Hop 5 to the right to land on +2 🌟',
+      'ZAP! +2 becomes -2! 😵'
+    ];
+
+    const nextStep = () => {
+      setSignSwapperStep((prev) => (prev + 1) % 4);
+    };
+
+    return (
+      <div className="monster-demo-box" style={{ borderColor: colors.primary }}>
+        <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>Hop on the Number Line:</span>
+          <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>Interactive Play</span>
+        </h4>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="monster-demo-display" style={{ margin: '8px 0', color: signSwapperStep === 3 ? '#ff6b6b' : '#ede8e3' }}>
+            {signSwapperStep === 0 && <span>-3 + 5 = ?</span>}
+            {signSwapperStep === 1 && <span>-3</span>}
+            {signSwapperStep === 2 && <span style={{ color: '#2ecc71' }}>-3 + 5 = <strong style={{ fontSize: '30px' }}>+2</strong></span>}
+            {signSwapperStep === 3 && <span style={{ color: '#ff6b6b' }}>-3 + 5 = <strong style={{ fontSize: '30px' }}>-2</strong> 😵</span>}
+          </div>
+
+          <div style={{ position: 'relative', background: 'rgba(0,0,0,0.3)', padding: '12px 6px', borderRadius: '12px', height: '40px', marginTop: '16px' }}>
+            <div style={{ position: 'absolute', left: '12px', right: '12px', top: '23px', height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px' }}></div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', width: '100%', height: '100%', alignItems: 'center' }}>
+              {numberLineNodes.map((n) => (
+                <div key={n} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1 }}>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: n === 0 ? '#fff' : 'rgba(255,255,255,0.5)' }}></div>
+                  <span style={{ fontSize: '10px', marginTop: '6px', color: n === 0 ? '#fff' : 'rgba(255,255,255,0.6)' }}>{n}</span>
+                </div>
+              ))}
+            </div>
+
+            <div 
+              style={{ 
+                position: 'absolute', 
+                left: `calc(${frogLeftPercent}% - 14px)`, 
+                top: '-15px', 
+                fontSize: '28px', 
+                transition: 'left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.2s',
+                animation: signSwapperStep === 3 ? 'shake 0.5s infinite' : 'none'
+              }}
+            >
+              {signSwapperStep === 3 ? '😵' : '🐸'}
+            </div>
+          </div>
+
+          <p className="monster-demo-text" style={{ minHeight: '40px', margin: '0' }}>
+            {stepTexts[signSwapperStep]}
+          </p>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              className="monster-detail-btn monster-detail-btn-primary" 
+              onClick={nextStep}
+              style={{ flex: 1, padding: '10px', fontSize: '14px', background: colors.primary }}
+            >
+              {signSwapperStep === 3 ? '🔄 Try Again' : '🐸 Hop!'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── 3. THE DECIMAL DRIFTER DEMO ───
+  if (monsterId === 'decimal-drifter') {
+    const scales = [
+      { text: '125.0', label: '🏢 A Giant Skyscraper! (Super Big!)', size: '90px', emoji: '🏢' },
+      { text: '12.5', label: '🦒 A Tall Giraffe! (Normal/Big)', size: '60px', emoji: '🦒' },
+      { text: '1.25', label: '🐈 A Little Cat! (Small)', size: '35px', emoji: '🐈' },
+      { text: '0.125', label: '🐜 A Tiny Ant! (Microscopic!)', size: '15px', emoji: '🐜' }
+    ];
+
+    const currentScale = scales[decimalPlace];
+
+    return (
+      <div className="monster-demo-box" style={{ borderColor: colors.primary }}>
+        <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>Slide the Decimal Point:</span>
+          <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>Interactive Play</span>
+        </h4>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+          <div className="monster-demo-display" style={{ letterSpacing: '4px', fontSize: '32px', height: '40px', display: 'flex', alignItems: 'center' }}>
+            {currentScale.text.split('').map((char, index) => (
+              <span 
+                key={index} 
+                style={char === '.' ? { color: colors.primary, fontWeight: 'bold', fontSize: '40px', transform: 'scale(1.2)', display: 'inline-block' } : {}}
+              >
+                {char}
+              </span>
+            ))}
+          </div>
+
+          <input
+            type="range"
+            min="0"
+            max="3"
+            step="1"
+            value={decimalPlace}
+            onChange={(e) => setDecimalPlace(Number(e.target.value))}
+            style={{ width: '100%', cursor: 'pointer', accentColor: colors.primary }}
+          />
+
+          <div style={{ 
+            height: '110px', 
+            display: 'flex', 
+            alignItems: 'flex-end', 
+            justifyContent: 'center', 
+            margin: '12px 0',
+            width: '100%',
+            background: 'rgba(0,0,0,0.15)',
+            borderRadius: '8px',
+            padding: '12px'
+          }}>
+            <div style={{ 
+              fontSize: currentScale.size, 
+              lineHeight: 1, 
+              transition: 'font-size 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' 
+            }}>
+              {currentScale.emoji}
+            </div>
+          </div>
+
+          <div style={{ width: '100%', textAlign: 'center' }}>
+            <strong style={{ display: 'block', fontSize: '15px', color: '#fff' }}>{currentScale.label}</strong>
+            <p className="monster-demo-text" style={{ margin: '6px 0 0 0' }}>
+              Moving the dot changes the size by 10x!
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── 4. THE CARRY CRASHER DEMO ───
+  if (monsterId === 'carry-crasher') {
+    return (
+      <div className="monster-demo-box" style={{ borderColor: colors.primary }}>
+        <h4 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>Column Carry Helper:</span>
+          <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>Interactive Play</span>
+        </h4>
+
+        <div className="monster-demo-toggles">
+          <button
+            className="monster-demo-toggle-btn"
+            onClick={() => setCarryCrasherMode('save')}
+            style={carryCrasherMode === 'save' ? { background: '#2ecc71', color: '#fff', borderColor: '#2ecc71' } : {}}
+          >
+            🦸 Save Carry
+          </button>
+          <button
+            className="monster-demo-toggle-btn"
+            onClick={() => setCarryCrasherMode('crash')}
+            style={carryCrasherMode === 'crash' ? { background: '#e74c3c', color: '#fff', borderColor: '#e74c3c' } : {}}
+          >
+            💥 Carry Crasher
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '12px 0' }}>
+          <div className="carry-crasher-sum" style={{ border: '2px solid rgba(255,255,255,0.15)', padding: '16px 24px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', width: '120px' }}>
+            <div style={{ height: '24px', display: 'flex', justifyContent: 'flex-start', width: '100%', paddingLeft: '10px' }}>
+              {carryCrasherMode === 'save' ? (
+                <span style={{ color: '#2ecc71', fontWeight: 'bold', fontSize: '16px', animation: 'bounce 1s infinite' }}>¹</span>
+              ) : (
+                <span style={{ color: 'transparent' }}>_</span>
+              )}
+            </div>
+            <div style={{ width: '100%', textAlign: 'right', letterSpacing: '4px' }}>2 8</div>
+            <div style={{ width: '100%', textAlign: 'right', letterSpacing: '4px', borderBottom: '2px solid #ede8e3', paddingBottom: '4px' }}>+ 1 4</div>
+            <div style={{ width: '100%', textAlign: 'right', letterSpacing: '4px', fontWeight: 'bold', color: carryCrasherMode === 'save' ? '#2ecc71' : '#ff6b6b' }}>
+              {carryCrasherMode === 'save' ? '4 2' : '3 2'}
+            </div>
+          </div>
+
+          <p className="monster-demo-text" style={{ margin: '0', minHeight: '36px' }}>
+            {carryCrasherMode === 'save' 
+              ? '🎉 The 1 is carried to the tens column! (Answer: 42)' 
+              : '💥 Oops: The carry was dropped! (Answer: 32)'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 import MonsterAvatar from './MonsterAvatar.jsx';
@@ -321,15 +718,19 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
       <div className="monster-detail-section">
         <h3 style={{ fontFamily: 'var(--font-display)' }}>What it does</h3>
         <p className="monster-detail-description">{entry.description}</p>
+        <InteractiveMonsterDemo monsterId={monsterId} colors={colors} />
       </div>
 
       <div className="monster-detail-section">
-        <h3 style={{ fontFamily: 'var(--font-display)' }}>Tips for next time</h3>
-        <ul className="monster-detail-tips">
+        <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: '8px' }}>Tips for next time</h3>
+        <div className="monster-tips-grid">
           {entry.tips.map((tip, i) => (
-            <li key={i}>{tip}</li>
+            <div key={i} className="monster-tip-card">
+              <span style={{ fontSize: '16px', lineHeight: 1 }}>💡</span>
+              <p>{tip}</p>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
 
       <div className="monster-detail-actions">
