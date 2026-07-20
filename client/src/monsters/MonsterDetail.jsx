@@ -193,14 +193,7 @@ function injectDetailStyles() {
       background: var(--clr-hover-strong, rgba(255,245,230,0.08));
     }
     .monster-detail-topic-select {
-      flex: 1;
-      padding: 12px 16px;
-      border-radius: 8px;
-      border: 1px solid var(--clr-border, rgba(255,245,230,0.18));
-      background: var(--clr-input, #3e3631);
-      color: var(--clr-text, #ede8e3);
-      font-size: 14px;
-      font-family: inherit;
+      display: none;
     }
 
     /* Interactive Playgrounds for Kids */
@@ -654,12 +647,6 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
   const entry = getMonsterExplanation(monsterId);
   const colors = MONSTER_COLORS[monsterId] || MONSTER_COLORS['bracketeer'];
 
-  // The cure flow will need a topic. Default to most common historical topic
-  // for this monster. User can change before starting.
-  const initialTopic = useMemo(() => getSuggestedTopic(monsterId) || '', [monsterId]);
-  const allTopics = useMemo(() => getAllTopics(monsterId), [monsterId]);
-  const [topic, setTopic] = useState(initialTopic);
-
   if (!entry) {
     return (
       <div className="monster-detail">
@@ -674,12 +661,15 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
   const healedState = getMonsterHealedState(monsterId);
 
   function handleStart() {
-    if (!topic) return;
-    onStartCure && onStartCure(monsterId, topic);
+    onStartCure && onStartCure(monsterId);
   }
 
   return (
     <div className="monster-detail" data-monster-id={monsterId}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', margin: '0 0 -8px 0' }}>
+        <button className="monster-hall-close" onClick={onBack} aria-label="Back to Hall">←</button>
+      </div>
+
       <div className={`monster-detail-hero ${healedState}`} style={{ '--monster-primary': colors.primary, '--monster-secondary': colors.secondary }}>
         <MonsterAvatar monsterId={monsterId} size={80} state={healedState} />
         <div>
@@ -711,28 +701,9 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
       </div>
 
       <div className="monster-detail-actions">
-        <select
-          className="monster-detail-topic-select"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          aria-label="Cure topic"
-        >
-          {allTopics.length === 0 && (
-            <option value="" disabled>No history yet — get a question wrong first</option>
-          )}
-          {allTopics.length > 0 && !topic && (
-            <option value="" disabled>Pick a topic to practice…</option>
-          )}
-          {allTopics.map((t) => (
-            <option key={t} value={t}>
-              {t}{t === initialTopic ? ' (your usual)' : ''}
-            </option>
-          ))}
-        </select>
         <button
           className="monster-detail-btn monster-detail-btn-primary"
           onClick={handleStart}
-          disabled={!topic}
         >
           Start Cure →
         </button>

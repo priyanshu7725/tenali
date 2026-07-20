@@ -210,13 +210,6 @@ export function HallPanel({ open, onClose, monsterLog, onStartCure }) {
           tabIndex={-1}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="monster-hall-header">
-            <div>
-              <h2 className="monster-hall-title">{detailEntry.name}</h2>
-              <div className="monster-hall-subtitle">{detailEntry.tagline}</div>
-            </div>
-            <button className="monster-hall-close" onClick={() => setSelectedId(null)} aria-label="Back to Hall">←</button>
-          </div>
           <div className="monster-hall-body">
             <MonsterDetail
               monsterId={selectedId}

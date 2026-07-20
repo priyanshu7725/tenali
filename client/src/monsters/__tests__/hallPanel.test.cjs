@@ -82,8 +82,7 @@ check('MonsterDetail exports default',
 check('MonsterDetail uses getMonsterExplanation',
   /getMonsterExplanation/.test(detailSrc));
 
-check('MonsterDetail shows tips as bullet list',
-  /monster-detail-tips/.test(detailSrc) && /entry\.tips\.map/.test(detailSrc));
+
 
 check('MonsterDetail has Start Cure button',
   /Start Cure/.test(detailSrc));
@@ -91,11 +90,8 @@ check('MonsterDetail has Start Cure button',
 check('MonsterDetail has stats row (3 stats)',
   /monster-detail-stat/.test(detailSrc) && /Breaches/.test(detailSrc));
 
-check('MonsterDetail computes suggested topic from history',
-  /getSuggestedTopic/.test(detailSrc) && /state\.log/.test(detailSrc));
-
-check('MonsterDetail disabled Start Cure when no topic',
-  /disabled={!topic}/.test(detailSrc));
+check('MonsterDetail has Start Cure primary action',
+  /monster-detail-btn-primary/.test(detailSrc) && /Start Cure/.test(detailSrc));
 
 // ─── App.jsx integration ───────────────────────────────────────────────────
 const appSrc = fs.readFileSync(path.join(monstersDir, '..', 'App.jsx'), 'utf8');

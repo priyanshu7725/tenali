@@ -42,7 +42,7 @@ function answersMatch(submitted, expected) {
 function historyQuestions(monsterId, topic) {
   const state = load();
   return (state.log || [])
-    .filter(entry => entry.monsterId === monsterId && entry.topic === topic)
+    .filter(entry => entry.monsterId === monsterId && (!topic || entry.topic === topic))
     .filter(entry => entry.question && entry.correctAnswer != null && entry.correctAnswer !== '')
     .slice(-QUESTION_COUNT)
     .reverse()
