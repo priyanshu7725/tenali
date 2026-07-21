@@ -81,6 +81,7 @@ import { installMonstersInterceptor } from './monsters/fetchInterceptor.js'
 import MonsterToast from './monsters/MonsterToast.jsx'
 import HallPanel from './monsters/HallPanel.jsx'
 import CureFlow from './monsters/CureFlow.jsx'
+import GuidedSolver from './monsters/GuidedSolver.jsx'
 import { load as loadMonsterLog, getMonsterHealedState } from './monsters/monsterStore.js'
 import MonsterAvatar from './monsters/MonsterAvatar.jsx'
 
@@ -42277,6 +42278,7 @@ function App() {
   })
   const [hallOpen, setHallOpen] = useState(false)
   const [activeCure, setActiveCure] = useState(null)
+  const [guidedSolverMonsterId, setGuidedSolverMonsterId] = useState(null)
   const [activeInterruption, setActiveInterruption] = useState(null)
 
   // Track monsters triggered during the active play session
@@ -44299,11 +44301,26 @@ function App() {
       />
       <HallPanel
         open={hallOpen}
-        onClose={() => setHallOpen(false)}
+        onClose={() => {
+          setHallOpen(false)
+          setGuidedSolverMonsterId(null)
+        }}
         monsterLog={monsterLog}
+        initialSelectedId={guidedSolverMonsterId}
+        initialGuidedSolver={!!guidedSolverMonsterId}
         onStartCure={(monsterId, topic) => {
           setHallOpen(false)
+          setGuidedSolverMonsterId(null)
           setActiveCure({ monsterId, topic })
+        }}
+        onOpenGuidedSolver={(monsterId) => {
+          setGuidedSolverMonsterId(monsterId)
+        }}
+        onCloseSolver={() => {
+          // Closing the solver manually means the user dismissed the deep-link.
+          // Clear the flag so the next Hall open (from toast, header, etc.)
+          // lands on the grid instead of reopening the same solver.
+          setGuidedSolverMonsterId(null)
         }}
       />
       {activeCure && <CureFlow
@@ -44313,6 +44330,11 @@ function App() {
         onComplete={() => {
           try { setMonsterLog(loadMonsterLog()) } catch { }
           setActiveCure(null)
+          setHallOpen(true)
+        }}
+        onOpenGuidedSolver={(monsterId) => {
+          setActiveCure(null)
+          setGuidedSolverMonsterId(monsterId)
           setHallOpen(true)
         }}
       />}

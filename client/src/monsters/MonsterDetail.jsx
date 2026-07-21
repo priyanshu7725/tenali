@@ -639,8 +639,19 @@ function InteractiveMonsterDemo({ monsterId, colors }) {
 
 import MonsterAvatar from './MonsterAvatar.jsx';
 import { getMonsterHealedState } from './monsterStore.js';
+import GuidedSolver from './GuidedSolver.jsx';
 
-export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory, onBack, onStartCure }) {
+export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory, onBack, onStartCure, onOpenGuidedSolver, onCloseSolver, initialGuidedSolver }) {
+  const [showGuidedSolver, setShowGuidedSolver] = useState(initialGuidedSolver || false);
+
+  function handleCloseSolver() {
+    setShowGuidedSolver(false);
+    // Clear the App-level deep-link flag so the next Hall open lands on the grid,
+    // not auto-reopened into this solver. The cure-fail escalation path is a
+    // directive (not state) and will set the flag again when the user takes it.
+    onCloseSolver && onCloseSolver();
+  }
+
   // Inject styles once
   if (typeof document !== 'undefined') injectDetailStyles();
 
@@ -662,6 +673,19 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
 
   function handleStart() {
     onStartCure && onStartCure(monsterId);
+  }
+
+  if (showGuidedSolver) {
+    return (
+      <div className="monster-detail" data-monster-id={monsterId}>
+        <GuidedSolver
+          inline={true}
+          monsterId={monsterId}
+          onClose={handleCloseSolver}
+          onStartCure={onStartCure}
+        />
+      </div>
+    );
   }
 
   return (
@@ -701,6 +725,15 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
       </div>
 
       <div className="monster-detail-actions">
+        <button
+          className="monster-detail-btn monster-detail-btn-secondary"
+          onClick={() => {
+            if (onOpenGuidedSolver) onOpenGuidedSolver(monsterId);
+            setShowGuidedSolver(true);
+          }}
+        >
+          💡 Guided Solver
+        </button>
         <button
           className="monster-detail-btn monster-detail-btn-primary"
           onClick={handleStart}

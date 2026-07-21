@@ -146,8 +146,8 @@ function injectHallStyles() {
 /**
  * Top-level Hall modal. Renders nothing when `open` is false.
  */
-export function HallPanel({ open, onClose, monsterLog, onStartCure }) {
-  const [selectedId, setSelectedId] = useState(null);
+export function HallPanel({ open, onClose, monsterLog, onStartCure, onOpenGuidedSolver, onCloseSolver, initialSelectedId, initialGuidedSolver }) {
+  const [selectedId, setSelectedId] = useState(initialSelectedId || null);
   const cardRef = useRef(null);
 
   // Inject styles once
@@ -155,10 +155,14 @@ export function HallPanel({ open, onClose, monsterLog, onStartCure }) {
     injectHallStyles();
   }, []);
 
-  // Reset selection when closed
+  // Sync selection when open or initialSelectedId changes
   useEffect(() => {
-    if (!open) setSelectedId(null);
-  }, [open]);
+    if (!open) {
+      if (!initialSelectedId) setSelectedId(null);
+    } else if (initialSelectedId) {
+      setSelectedId(initialSelectedId);
+    }
+  }, [open, initialSelectedId]);
 
   // Escape to close
   useEffect(() => {
@@ -218,6 +222,9 @@ export function HallPanel({ open, onClose, monsterLog, onStartCure }) {
               cureHistory={cureHistory}
               onBack={() => setSelectedId(null)}
               onStartCure={handleStartCure}
+              onOpenGuidedSolver={onOpenGuidedSolver}
+              onCloseSolver={onCloseSolver}
+              initialGuidedSolver={initialGuidedSolver}
             />
           </div>
         </div>
