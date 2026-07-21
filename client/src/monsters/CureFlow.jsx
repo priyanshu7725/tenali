@@ -9,7 +9,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { load, recordCure } from './monsterStore.js';
+import { load, recordCure, getCureHistory } from './monsterStore.js';
 import { getMonsterName } from './monsterExplanations.js';
 import MonsterAvatar from './MonsterAvatar.jsx';
 
@@ -215,7 +215,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-export function CureFlow({ monsterId, topic, onComplete, onCancel }) {
+export function CureFlow({ monsterId, topic, onComplete, onCancel, onOpenGuidedSolver }) {
   const [questions, setQuestions] = useState([]);
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState('');
@@ -334,7 +334,52 @@ export function CureFlow({ monsterId, topic, onComplete, onCancel }) {
             <button className="monster-cure-primary" onClick={feedback ? advance : submit}>{feedback ? (index + 1 === QUESTION_COUNT ? 'See result' : 'Next question') : 'Check answer'}</button>
           </div>
         </>}
-        {finished && <div className="monster-cure-result"><h3>{correctCount >= REQUIRED_CORRECT ? 'Monster cured!' : 'The monster held on—for now.'}</h3><p>You got {correctCount} of {QUESTION_COUNT}; you need {REQUIRED_CORRECT} to cure it.</p><div className="monster-cure-actions"><button className="monster-cure-primary" onClick={closeResult}>Return to Hall</button></div></div>}
+        {finished && (() => {
+          const history = getCureHistory(monsterId);
+          const isSuccess = correctCount >= REQUIRED_CORRECT;
+          // Check if latest 2 attempts (including current recorded one) were failures
+          const recentFailures = history.slice(-2).filter(h => h && !h.success).length;
+          const isRepeatedFailure = !isSuccess && recentFailures >= 2;
+
+          return (
+            <div className="monster-cure-result">
+              <h3>{isSuccess ? 'Monster cured!' : 'The monster held on—for now.'}</h3>
+              <p>You got {correctCount} of {QUESTION_COUNT}; you need {REQUIRED_CORRECT} to cure it.</p>
+              <div className="monster-cure-actions" style={{ flexDirection: 'column', gap: '10px' }}>
+                {!isSuccess && onOpenGuidedSolver && (
+                  <button
+                    className="monster-cure-secondary"
+                    style={
+                      isRepeatedFailure
+                        ? {
+                            background: 'linear-gradient(135deg, rgba(255,215,0,0.25), rgba(232,134,74,0.25))',
+                            border: '2px solid #ffd700',
+                            color: '#ffd700',
+                            fontWeight: '700',
+                            fontSize: '15px',
+                            boxShadow: '0 0 20px rgba(255,215,0,0.4)',
+                            padding: '14px 20px',
+                            animation: 'monster-detail-pulse 2s infinite'
+                          }
+                        : {
+                            background: 'rgba(255, 215, 0, 0.12)',
+                            border: '1px solid #ffd700',
+                            color: '#ffd700'
+                          }
+                    }
+                    onClick={() => {
+                      onCancel && onCancel();
+                      onOpenGuidedSolver(monsterId);
+                    }}
+                  >
+                    {isRepeatedFailure ? '🚨 2 Consecutive Failures — Learn with Guided Solver!' : '💡 Learn with Guided Solver'}
+                  </button>
+                )}
+                <button className="monster-cure-primary" onClick={closeResult}>Return to Hall</button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

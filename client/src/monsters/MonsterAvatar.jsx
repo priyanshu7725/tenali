@@ -65,7 +65,7 @@ const MONSTER_AVATARS = {
           <>
             <g className="angry-eye-left"><circle cx="38" cy="47" r="5.5" fill="#fff" /><circle cx="39" cy="47" r="3" fill="#1a1614" /><path d="M28,39 L40,45" stroke="#ff7b7b" strokeWidth="2" /></g>
             <g className="angry-eye-right"><circle cx="62" cy="47" r="5.5" fill="#fff" /><circle cx="61" cy="47" r="3" fill="#1a1614" /><path d="M72,39 L60,45" stroke="#ff7b7b" strokeWidth="2" /></g>
-            <path d="M43,58 Q46,62 50,58 T57,58" fill="none" stroke="#1a1614" stroke-width="2.5" />
+            <path d="M43,58 Q46,62 50,58 T57,58" fill="none" stroke="#1a1614" strokeWidth="2.5" />
           </>
         )}
       </>
