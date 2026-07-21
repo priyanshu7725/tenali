@@ -1,5 +1,30 @@
 # Misconception Monsters — CHANGELOG
 
+## v0.1.1 — 2026-07-21 (Guided Solver copy: invitation over verdict)
+
+**Session:** Pedagogical review of the Guided Solver button text on the cure-result card.
+
+**Branch:** `feature/monster-misconceptions` (off `0d1ea63` at v0.1.1).
+
+**Change:** Reframed the button copy in `CureFlow.jsx` line 375 to drop the failure-count framing and read as a peer offering help, not a system reporting a tally.
+
+- Standard (after first fail): `'💡 Learn with Guided Solver'` → `'💡 Walk through it together?'`
+- Elevated (after 2 consecutive fails): `'🚨 2 Consecutive Failures — Learn with Guided Solver!'` → `'Want to walk through it together?'`
+
+The elevated variant keeps its visual prominence (gold gradient, `monster-detail-pulse` animation, border weight) but loses the loud-emoji + verdict framing. Both buttons now read as a single, consistent voice — same tone, different visual weight.
+
+**Why it matters:** the earlier copy made the system feel like it was *scoring* the student. The student is the one who opened the app to learn; the app's job is to suggest a next step, not hand back a grade. `'Walk through it together?'` is the same offer with the accountability stripped out.
+
+**Files touched:**
+- `client/src/monsters/CureFlow.jsx` (1 line, copy only — no logic change)
+
+**Companion artifact (outside this repo):**
+- `D:\vins-phase-2\tenali-docs-backup\guided_solver_button_redesign.html` — standalone HTML preview of three button styles (current/alarm, calm/card, minimal/bordered) with a toggle for 1-fail vs 2-fail-elevated state. Reference only, not ship code.
+
+**Verification:** Parse suite still passes. No behavior change. All 111/111 smoke-test assertions still green.
+
+---
+
 ## v0.1.0 — 2026-07-21 (post-build doc pass + Guided Solver layer)
 
 **Session:** Logged uncommitted work that accumulated on top of v0.0.9 (end-to-end smoke test). Two parts: a doc-only version bump covering the existing CHANGELOG gaps, and a new Guided Solver escalation feature.
