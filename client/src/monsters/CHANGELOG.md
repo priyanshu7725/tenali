@@ -1,5 +1,115 @@
 # Misconception Monsters — CHANGELOG
 
+## v0.1.0 — 2026-07-21 (post-build doc pass + Guided Solver layer)
+
+**Session:** Logged uncommitted work that accumulated on top of v0.0.9 (end-to-end smoke test). Two parts: a doc-only version bump covering the existing CHANGELOG gaps, and a new Guided Solver escalation feature.
+
+**Branch:** `feature/monster-misconceptions` (off `7669413` at v0.1.0).
+
+### Part A — Bug fixes found during code audit (2026-07-21)
+
+Two real bugs caught by static review of the uncommitted layer before any commit:
+
+**1. CureFlow: missing `getCureHistory` import.** The finished-result block (the new IIFE that detects 2-consecutive-failure escalation) called `getCureHistory(monsterId)` but only `load` and `recordCure` were imported from `./monsterStore.js`. The first time any cure finished, React would throw `ReferenceError: getCureHistory is not defined` — silently killing the cure-complete UI and the new Guided Solver entry point. Fixed by extending the existing import to `{ load, recordCure, getCureHistory }`. The export was already there since v0.0.3 (spec §4.3).
+
+**2. MonsterAvatar: invalid CSS rules in `injectStyles()`.** Two CSS rules inside the JS template string had `strokeWidth: 1.5;` and `strokeWidth: 3.5;` (camelCase). CSS doesn't accept that — the browser parses these rules as malformed and silently drops `stroke-width`, falling back to the default 1px. The visual difference: `.crasher-cracks` and `.happy-expression` lost their thick stroke styling (Carry Crasher purple cracks and the cure-success happy face were rendering ~1px instead of 1.5–3.5px). Reverted both to `stroke-width` (kebab-case, valid CSS). Kept the genuine JSX fix on the bracketeer angry-mouth `<path>` element (`stroke-width` → `strokeWidth` — JSX does require camelCase for SVG attrs).
+
+### Part B — Guided Solver layer (added 2026-07-17 to 2026-07-21, uncommitted)
+
+A new escalation flow: when a cure fails, the student can opt into a guided step-by-step walkthrough of the underlying misconception, before re-attempting the cure.
+
+**Files touched:**
+- `client/src/monsters/GuidedSolver.jsx` (NEW, 554 lines)
+- `client/src/monsters/__tests__/guidedSolver.test.cjs` (NEW, 36 lines)
+- `client/src/monsters/CureFlow.jsx` (+49 / -2)
+- `client/src/monsters/HallPanel.jsx` (+16 / -4)
+- `client/src/monsters/MonsterDetail.jsx` (+27 / -1)
+- `client/src/App.jsx` (+18)
+
+**`GuidedSolver.jsx`:**
+- Self-contained interactive step-by-step solver overlay
+- Supports all 4 monsters: bracketeer (distributive multiplication), sign-swapper (number-line frog hops), decimal-drifter (place counting + slide), carry-crasher (vertical column with carry row)
+- Two render modes: `inline={true}` (renders inside MonsterDetail, no backdrop/portal) and standalone (modal via `react-dom` portal at z-index 10020, above HallPanel)
+- Per-monster visualisations:
+  - **Bracketeer:** `3(x+5) ➔ ?` with each term highlighting one-by-one as steps advance
+  - **Sign Swapper:** number line `[-5..+5]` with a 🐸 frog hopping place-by-place (200ms `setInterval`), ends with 😵 frog on the sign-swapped answer
+  - **Decimal Drifter:** three-stage text progression: places count → multiplication → decimal slide
+  - **Carry Crasher:** vertical column `28 + 14` with carry row lighting up
+- Step data lives in `MONSTER_SOLVER_DATA` (one entry per monster, `{ title, tagline, btnTheme, steps: [{ text, desc }] }`)
+- Actions: `🔄 Reset Steps` (back to step 1) and `Ready to Start Cure →` (closes solver, fires `onStartCure(monsterId)`)
+- CSS injected once via `[data-guided-solver]` style tag (idempotent), uses same CSS-variable theme as the rest of the monsters components (`--clr-card`, `--clr-text`, `--clr-gold`, `--clr-accent`, `--clr-correct` with fallbacks)
+
+**`CureFlow.jsx` — escalation logic on cure finish:**
+- New optional prop `onOpenGuidedSolver(monsterId)`
+- Finished-result block reads `getCureHistory(monsterId)`, slices the latest 2 entries, counts failures
+- Renders a new secondary button above "Return to Hall":
+  - **Standard failure:** `"💡 Learn with Guided Solver"` — subtle gold tint (`rgba(255,215,0,0.12)` bg, `1px solid #ffd700`)
+  - **2 consecutive failures:** `"🚨 2 Consecutive Failures — Learn with Guided Solver!"` — loud: gold→orange gradient, `2px solid #ffd700`, `0 0 20px rgba(255,215,0,0.4)` glow, **pulses** via `monster-detail-pulse 2s infinite`, larger padding/font
+- Click: `onCancel()` first (close cure), then `onOpenGuidedSolver(monsterId)` — App routes the student back into the Hall pre-selecting that monster's solver
+
+**`MonsterDetail.jsx` — secondary entry point:**
+- New optional props: `onOpenGuidedSolver(monsterId)`, `initialGuidedSolver`
+- New local state: `showGuidedSolver` (defaults from `initialGuidedSolver`)
+- New early-return branch: when `showGuidedSolver` is true, renders `GuidedSolver` inline inside the `.monster-detail` container
+- New secondary action button `"💡 Guided Solver"` above "Start Cure" — flips `showGuidedSolver` and fires `onOpenGuidedSolver(monsterId)` so App can persist the intent
+
+**`HallPanel.jsx` — deep-link support:**
+- New optional props: `onOpenGuidedSolver`, `initialSelectedId`, `initialGuidedSolver`
+- `selectedId` initialized from `initialSelectedId` instead of hard-coded `null`
+- `useEffect([open, initialSelectedId])` syncs selection from outside (so App can re-open Hall directly into a specific monster's detail view)
+- Reset-on-close behavior now respects external state: only clears `selectedId` if `initialSelectedId` is unset
+- Passes `onOpenGuidedSolver` and `initialGuidedSolver` through to `MonsterDetail`
+
+**`App.jsx` — orchestration:**
+- New state: `guidedSolverMonsterId` (string | null)
+- Imports `GuidedSolver` (not actually used as a JSX element — solver is mounted inside MonsterDetail inline; the import was added but never renders directly. Worth removing if cleanup pass happens.)
+- `HallPanel.onClose` clears `guidedSolverMonsterId` too
+- `HallPanel.onStartCure` clears `guidedSolverMonsterId` before setting active cure
+- `HallPanel` props extended with `initialSelectedId={guidedSolverMonsterId}`, `initialGuidedSolver={!!guidedSolverMonsterId}`, `onOpenGuidedSolver={(id) => setGuidedSolverMonsterId(id)}`
+- `CureFlow` props extended with `onOpenGuidedSolver={(id) => { setActiveCure(null); setGuidedSolverMonsterId(id); setHallOpen(true); }}` — exits cure, opens Hall, pre-selects solver
+
+**Flows:**
+
+1. **Cure-fail → solver → retry cure:** Student finishes cure below threshold → taps "💡 Learn with Guided Solver" → CureFlow closes, Hall reopens with monster detail pre-selected and solver auto-open → student goes through steps → taps "Ready to Start Cure →" → cure starts fresh.
+
+2. **From Hall detail → solver:** Student opens Hall from toast → taps a monster card → MonsterDetail opens → taps "💡 Guided Solver" → inline solver replaces detail view → closes via ✕ to return to detail.
+
+### Test coverage
+
+**`__tests__/guidedSolver.test.cjs`** — 8 source-level checks (same pattern as `hallPanel.test.cjs` / `monsterToast.test.cjs`):
+- file exists
+- default export present
+- all 4 monster titles in `MONSTER_SOLVER_DATA`
+- "Reset Steps" button string
+- "Ready to Start Cure" button string
+
+**No functional/visual tests** for the GuidedSolver — the component renders canvas elements (SVG-ish number lines, animated frogs, vertical columns) that aren't easily source-level verifiable. Browser smoke test (next session) should walk the two flows above.
+
+### Spec adherence
+
+- **No spec section covers GuidedSolver.** This is feature-creep on top of the v0.2 spec. The escalation heuristic (2 consecutive failures → loud prompt) is a pedagogical choice, not a spec'd requirement. If a v0.3 spec is written, this layer should be either formalised or split out.
+- **Carry Crasher solver ships fully** even though the classifier gate is OFF (`MONSTERS_ENABLED.carry-crasher === false`). Inert in production but ready if/when the flag flips. No spec change needed; consistent with the "scaffold the data, gate the trigger" pattern from v0.0.4.
+
+### Known issues / watch-list
+
+- **Hall auto-deep-links after solver dismissal (fixed in this version).** Previously: if a student opened the Guided Solver from a monster detail page and dismissed it with the ✕ button, then closed the whole Hall, the next time they opened the Hall from any other toast the Hall would skip straight to that solver again — even though they'd explicitly closed it. Behaviorally wrong because tapping the Hall should mean "show me the grid," not "remind me of the screen I just left." Fixed: clicking ✕ on the solver now also clears the App-level deep-link flag, so the next Hall open lands on the grid normally. The cure-fail escalation path is intentionally unaffected — that flow IS a directive ("take me to the solver for this monster"), so the deep-link there survives until the Hall is dismissed.
+
+- **Inline `style={}` objects in CureFlow's finished block** instead of CSS classes. Works but not style-consistent with the rest of the component. Worth a small refactor in a future version.
+- **`App.jsx` imports `GuidedSolver` but doesn't render it directly** — the import is dead. Cleanup candidate.
+- **`monster-detail-pulse` keyframe** is reused for the cure-result escalation glow. If the keyframe gets removed/renamed in MonsterDetail, the escalation button stops pulsing. Worth cross-referencing.
+
+### Verification
+
+- All 5 smoke test suites pass: classifier (22/22), fetchInterceptor (37/37), hallPanel (30/30), monsterToast (8/8), guidedSolver (8/8). Total **105/105** across the monsters feature.
+- No spec drift — current spec (v0.2) still satisfied by all shipped code.
+
+### Next
+
+- Step 9 (per spec §10) — Demo: live walk-through to maintainer on `quadratic` topic using real wrong answers from the running app. Should be first thing next session.
+- Optional: refactor CureFlow inline styles into CSS classes; remove dead `GuidedSolver` import in App.jsx; write functional tests for GuidedSolver flows once a browser-automation harness is in place.
+
+---
+
 ## v0.0.1 — 2026-07-09 (branch creation, scaffolding)
 
 **Session:** Branch cut from `upstream/main`. No code yet.
