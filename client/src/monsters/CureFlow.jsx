@@ -372,7 +372,7 @@ export function CureFlow({ monsterId, topic, onComplete, onCancel, onOpenGuidedS
                       onOpenGuidedSolver(monsterId);
                     }}
                   >
-                    {isRepeatedFailure ? '🚨 2 Consecutive Failures — Learn with Guided Solver!' : '💡 Learn with Guided Solver'}
+                    {isRepeatedFailure ? 'Want to walk through it together?' : '💡 Walk through it together?'}
                   </button>
                 )}
                 <button className="monster-cure-primary" onClick={closeResult}>Return to Hall</button>
