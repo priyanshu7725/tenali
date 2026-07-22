@@ -67816,9 +67816,8 @@ function ProgressTrackerApp({ onBack }) {
                 {paginated.map(r => {
                   const spd = r.timeTakenSeconds > 0 ? parseFloat(((r.correctAnswers * 60) / r.timeTakenSeconds).toFixed(1)) : 0
                   return (
-                    <tr key={r.id} style={{ borderBottom: '1px solid var(--clr-border)' }}
-                      onClick={() => setSelectedPoint({ record: r, session: sortedRecords.indexOf(r) + 1 })}
-                      style={{ cursor: 'pointer' }}>
+                    <tr key={r.id} style={{ borderBottom: '1px solid var(--clr-border)', cursor: 'pointer' }}
+                      onClick={() => setSelectedPoint({ record: r, session: sortedRecords.indexOf(r) + 1 })}>
                       <td style={{ padding: '8px 10px' }}>{formatDate(r.date)}</td>
                       <td style={{ padding: '8px 10px', textAlign: 'center' }}>{r.questionSummary?.easy || 0}</td>
                       <td style={{ padding: '8px 10px', textAlign: 'center' }}>{r.questionSummary?.medium || 0}</td>
