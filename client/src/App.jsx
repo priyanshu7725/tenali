@@ -56,7 +56,12 @@ function useProgressSubmit(revealed, isCorrect, topic, questionId) {
     }).catch(err => console.error('Failed to update progress', err));
   }, [revealed, isCorrect, topic, questionId]);
 }
+
+
 import Vachana from './vachana'
+import 'chart.js/auto'
+import { Line } from 'react-chartjs-2'
+
 import './App.css'
 import EnhancedMathDetectiveApp from './detective-app'
 import GlossaryText from './components/GlossaryText'
@@ -75,16 +80,22 @@ import VisualMathLabRedux, {
 import CoordinateGrid from './components/CoordinateGrid';
 const LanguageDashboard = lazy(() => import('./language/LanguageDashboard'));
 import { VOCAB_CORPUS } from './vocabCorpus'
-import PercentExplanationApp from './PercentExplanationApp'
-import { playSound } from './audioContext'
-import { installMonstersInterceptor } from './monsters/fetchInterceptor.js'
-import MonsterToast from './monsters/MonsterToast.jsx'
-import HallPanel from './monsters/HallPanel.jsx'
-import CureFlow from './monsters/CureFlow.jsx'
-import GuidedSolver from './monsters/GuidedSolver.jsx'
-import { load as loadMonsterLog, getMonsterHealedState } from './monsters/monsterStore.js'
-import MonsterAvatar from './monsters/MonsterAvatar.jsx'
-
+import PercentExplanationApp from './PercentExplanationApp';
+import { playSound } from './audioContext';
+import { installMonstersInterceptor } from './monsters/fetchInterceptor.js';
+import MonsterToast from './monsters/MonsterToast.jsx';
+import HallPanel from './monsters/HallPanel.jsx';
+import CureFlow from './monsters/CureFlow.jsx';
+import GuidedSolver from './monsters/GuidedSolver.jsx';
+import { load as loadMonsterLog, getMonsterHealedState } from './monsters/monsterStore.js';
+import MonsterAvatar from './monsters/MonsterAvatar.jsx';
+import EquationSandboxApp from './lib/EquationSandboxApp.jsx';
+import QFormulaConceptApp from './lib/concept/QFormulaConceptApp.jsx';
+import SimulConceptApp from './lib/simul-concept/SimulConceptApp.jsx';
+import DiagnosticQuiz from './lib/DiagnosticQuiz.jsx';
+import { useI18n } from './lib/i18n.jsx';
+import CuriosityApp from './Curiosity.jsx';
+import GeometryApp from './GeometryApp';
 
 // API base URL from environment variables (Vite)
 const API = import.meta.env.VITE_API_BASE_URL || '';
@@ -172,7 +183,7 @@ function useAuth() {
 
 // Hamburger button (top-right) + dropdown + login modal.
 // Renders globally — sits next to the .theme-toggle.
-function AuthMenu() {
+function AuthMenu({ t = (s) => s }) {
   const { user, login, logout } = useAuth()
   const [open, setOpen] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
@@ -181,11 +192,33 @@ function AuthMenu() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
+  // Hide hamburger menu in visual learning to prevent navigation away
+  const params = new URLSearchParams(window.location.search)
+  const mode = params.get('mode')
+  const pathname = window.location.pathname.replace(/\/$/, '').toLowerCase()
+  const isVisualLearning =
+    pathname === '/geocraft' ||
+    pathname === '/visual-math-lab-redux' ||
+    pathname === '/mensuration-lab' ||
+    pathname === '/math-lab' ||
+    mode === 'math-lab' ||
+    mode === 'visual-math-lab-redux' ||
+    mode === 'mensuration-lab' ||
+    mode === 'addition' ||
+    mode === 'geocraft'
+
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') { setOpen(false); setShowLogin(false); setError('') } }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    const onNav = e => { setOpen(false) }
+    window.addEventListener('tenali-navigate', onNav)
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('tenali-navigate', onNav) }
   }, [])
+
+  const navigateTo = (mode) => {
+    window.dispatchEvent(new CustomEvent('tenali-navigate', { detail: { mode } }))
+    setOpen(false)
+  }
 
   const submit = async (e) => {
     if (e && e.preventDefault) e.preventDefault()
@@ -194,10 +227,18 @@ function AuthMenu() {
       await login(username.trim(), password)
       setShowLogin(false); setOpen(false)
       setUsername(''); setPassword('')
-      window.location.href = '/tenth'
+      if (isVisualLearning) {
+        window.location.reload()
+      } else {
+        window.location.href = '/tenth'
+      }
     } catch (err) {
       setError(err.message || 'login failed')
     } finally { setBusy(false) }
+  }
+
+  if (isVisualLearning) {
+    return null
   }
 
   return (
@@ -242,26 +283,42 @@ function AuthMenu() {
                   Signed in as <strong>{user.username}</strong>
                 </div>
                 <hr style={{ border: 'none', borderTop: '1px solid var(--clr-border, #444)', margin: '4px 0' }} />
-                <button
-                  type="button"
-                  onClick={() => { window.location.href = '/'; setOpen(false) }}
-                  style={{ width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 6, background: 'transparent', border: 'none', color: 'var(--clr-text)', cursor: 'pointer', fontSize: '0.95rem' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-                >
-                  Puzzles
-                </button>
+                {!isVisualLearning && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => { window.location.href = '/'; setOpen(false) }}
+                      style={{ width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 6, background: 'transparent', border: 'none', color: 'var(--clr-text)', cursor: 'pointer', fontSize: '0.95rem' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                    >
+                      Puzzles
+                    </button>
 
+                    <button
+                      type="button"
+                      onClick={() => { window.location.href = '/profile'; setOpen(false) }}
+                      style={{ width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 6, background: 'transparent', border: 'none', color: 'var(--clr-text)', cursor: 'pointer', fontSize: '0.95rem' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                    >
+                      Profile
+                    </button>
+                    <hr style={{ border: 'none', borderTop: '1px solid var(--clr-border, #444)', margin: '4px 0' }} />
+                  </>
+                )}
                 <button
                   type="button"
-                  onClick={() => { window.location.href = '/profile'; setOpen(false) }}
+                  onClick={() => {
+                    setOpen(false)
+                    navigateTo('trackProgress')
+                  }}
                   style={{ width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 6, background: 'transparent', border: 'none', color: 'var(--clr-text)', cursor: 'pointer', fontSize: '0.95rem' }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                 >
-                  Profile
+                  Track Progress
                 </button>
-                <hr style={{ border: 'none', borderTop: '1px solid var(--clr-border, #444)', margin: '4px 0' }} />
                 <button
                   type="button"
                   onClick={() => { logout(); setOpen(false) }}
@@ -354,6 +411,11 @@ function AuthGate({ children }) {
       <p style={{ opacity: 0.85, lineHeight: 1.6 }}>
         This page is only available to signed-in users. Open the <strong>menu</strong> in the top-right corner and choose <strong>Log in</strong>.
       </p>
+      <button
+        onClick={() => { window.location.href = import.meta.env.BASE_URL || '/' }}
+        style={{ marginTop: 24, padding: '10px 24px', borderRadius: 8, background: 'var(--clr-accent, #e8833a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
+        ← Back to home
+      </button>
     </div>
   )
 }
@@ -507,6 +569,47 @@ export function useTimer() {
  *   Array of result objects from quiz attempts. Each has question text, user answer, correct answer, correctness flag, and time in seconds.
  * @returns {ReactElement|null} Table element or null if no results
  */
+const STORAGE_KEY = 'gymQuizHistory_v1'
+const MAX_HISTORY = 500
+const SUPPORTED_GYMS = [
+  'Gym Decimals',
+  'Functions Gym',
+  'DotProducts Gym',
+  'Fractions-add-gym',
+  'LinearEquations-Gym',
+  'Indices-Gym',
+  'Polynomials Gym',
+]
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
+}
+
+function saveHistory(record) {
+  const history = loadHistory()
+  history.unshift(record)
+  if (history.length > MAX_HISTORY) history.splice(MAX_HISTORY)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history))
+}
+
+function saveGymResult({ gymName, totalQuestions, correctAnswers, timeTakenSeconds, questionSummary = { easy: 0, medium: 0, hard: 0, extrahard: 0 } }) {
+  if (totalQuestions === 0) return
+  const accuracy = parseFloat(((correctAnswers / totalQuestions) * 100).toFixed(2))
+  const record = {
+    id: typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36),
+    date: new Date().toISOString(),
+    gymName,
+    questionSummary,
+    totalQuestions,
+    correctAnswers,
+    accuracy,
+    timeTakenSeconds,
+  }
+  saveHistory(record)
+}
+
 function ResultsTable({ results }) {
   const processedRef = useRef(false);
   useEffect(() => {
@@ -938,7 +1041,11 @@ function renderFeedback(feedback, isCorrect) {
   if (!feedback) return null
   const isSolve = isCorrect === false && feedback.startsWith('Solution:')
   if (!isSolve) {
-    return <div className={`feedback ${isCorrect ? 'correct' : 'wrong'}`}>{feedback}</div>
+    return (
+      <div className={`feedback ${isCorrect ? 'correct' : 'wrong'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+        <span>{feedback}</span>
+      </div>
+    )
   }
   // Parse solve feedback: "Solution: ANSWER\nExplanation..."
   const lines = feedback.split('\n')
@@ -960,7 +1067,9 @@ function renderFeedback(feedback, isCorrect) {
 
   return (
     <div className="feedback solve">
-      <div className="solve-answer-badge">{answerLine}</div>
+      <div className="solve-answer-badge" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+        <span>{answerLine}</span>
+      </div>
       {steps.length > 0 && (
         <div className="solve-timeline">
           {steps.map((step, i) => (
@@ -969,7 +1078,9 @@ function renderFeedback(feedback, isCorrect) {
                 <div className="solve-step-dot" />
                 {i < steps.length - 1 && <div className="solve-step-line" />}
               </div>
-              <div className="solve-step-content">{step}</div>
+              <div className="solve-step-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', width: '100%' }}>
+                <span>{step}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -42253,6 +42364,9 @@ function PercentPage(props) {
 }
 
 function App() {
+  const [diagnosticState, setDiagnosticState] = useState({});
+  const { t } = useI18n();
+
   // Currently selected quiz mode (null = home menu, or key like 'gk', 'addition', etc.)
   const [mode, setMode] = useState(() => {
     try {
@@ -42698,6 +42812,15 @@ function App() {
     };
   }, [completedTopics, goldMastery, coins, totalSolved, mode]);
 
+
+
+  // Listen for navigation events from AuthMenu
+  useEffect(() => {
+    const onNav = (e) => { setMode(e.detail.mode) }
+    window.addEventListener('tenali-navigate', onNav)
+    return () => window.removeEventListener('tenali-navigate', onNav)
+  }, [])
+
   // Current theme: 'dark' or 'light'
   // Initialized from localStorage with fallback to 'dark'
   const [theme, setTheme] = useState(() => {
@@ -42908,6 +43031,22 @@ function App() {
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
         <AuthGate><TenthApp onBack={() => { window.location.href = '/' }} /></AuthGate>
+      </>
+    )
+  }
+
+  // Route: /geocraft → Kids Geometry Workspace
+  if (pathname === '/geocraft') {
+    return (
+      <>
+        <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
+        <div className="app-shell">
+          <div className="card">
+            <GeometryApp onBack={() => { window.location.href = '/' }} />
+          </div>
+        </div>
       </>
     )
   }
@@ -44011,6 +44150,7 @@ function App() {
     'visual-math-lab-redux': VisualMathLabRedux,
     'mensuration-lab': MensurationLabApp,
     'basic-arith-lab': BasicArithmeticLabApp,
+    geocraft: GeometryApp,
 
     'comic-addition': ComicAdditionApp,
     gk: GKApp,                    // General Knowledge
@@ -44092,6 +44232,7 @@ function App() {
     randommix: RandomMixApp,       // Random Mix (adaptive)
     custom: CustomApp,             // Custom lesson builder
     gym: GymApp,                   // Unified adaptive Gym — bundles all 7 below
+    curiosity: CuriosityApp,       // Curiosity Mode — experiment with "what if" variations
     guess: GuessNumberApp,         // Binary magic — guess a number 0–31
     detective: EnhancedMathDetectiveApp, // Math Detective Agency — story-based mystery cases
     gymdecimals: GymDecimalsApp,   // Gym Decimals — signed decimal multiplication (MCQ)
@@ -44101,6 +44242,7 @@ function App() {
     lineqgym: LinEqGymApp,         // LinearEquations-Gym — solve linear equations (MCQ)
     indicesgym: IndicesGymApp,     // Indices-Gym — index laws (MCQ)
     polygym: PolyGymApp,           // Polynomials Gym — arithmetic → monomial algebra (MCQ)
+    trackProgress: null,
   }
 
   // Get the component to render (or null if mode not set)
@@ -44177,6 +44319,10 @@ function App() {
           }}
         />
       );
+    }
+
+    if (mode === 'trackProgress') {
+      return <ProgressTrackerApp onBack={() => setMode(null)} />;
     }
 
     if (ActiveApp) {
@@ -44287,7 +44433,7 @@ function App() {
       )}
 
       {mode === 'vachana' ? (
-        <Vachana onBack={() => setMode(null)} />
+        <Vachana onBack={() => setMode(null)} initialAdaptScore={diagnosticState[mode] || 0} />
       ) : (
         <div className="card">
           {renderContent()}
@@ -44362,6 +44508,12 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
   ]
   // Visual Learning Universe lives only in the hamburger menu
   const mathLabEntry = { key: 'math-lab', name: '🔬 Visual Learning Universe', subtitle: 'Visual, Mensuration & Addition labs', color: 'orange' }
+  const geocraftEntry = { key: 'geocraft', name: '📐 GeoCraft', subtitle: 'Interactive Geometry Lab', color: 'featured', isRedirect: true, path: '/geocraft' }
+
+  const hamburgerApps = [
+    ...featuredApps,
+    { key: 'curiosity', name: 'Curiosity Mode', subtitle: 'Explore "What if" variations', color: 'pink' },
+  ]
 
   // All regular quiz apps sorted alphabetically by name
   const regularApps = [
@@ -44454,7 +44606,7 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
   ]
 
   // Combined list for search filtering
-  const allApps = [...featuredApps, ...regularApps]
+  const allApps = [...hamburgerApps, ...regularApps]
 
   // Hamburger menu open state
   const menuRef = useRef(null)
@@ -44485,6 +44637,7 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
 
   // Decide which items to show on the main grid list
   const displayGridApps = isGoalSelection ? filteredRegular : [...filteredRegular]
+  const filteredHamburgerApps = isSearching ? hamburgerApps.filter(matchFilter) : hamburgerApps
 
   // Grid layout tracking (for responsive display)
   const gridRef = useRef(null)
@@ -44555,9 +44708,16 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
               onMouseLeave={e => e.target.style.background = 'none'}>
               <strong style={{ color: 'var(--clr-accent)' }}>ℹ️ About Tenali</strong>
             </button>
-            {/* Visual Learning Universe pinned at top of hamburger menu */}
-            {[mathLabEntry].map(app => (
-              <button key={app.key} onClick={() => { setMenuOpen(false); onSelect(app.key) }} style={{
+            {/* Visual Learning Universe & GeoCraft pinned at top of hamburger menu */}
+            {[mathLabEntry, geocraftEntry].map(app => (
+              <button key={app.key} onClick={() => {
+                setMenuOpen(false);
+                if (app.isRedirect) {
+                  window.location.href = app.path;
+                } else {
+                  onSelect(app.key);
+                }
+              }} style={{
                 display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px',
                 background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text)',
                 fontFamily: 'var(--font-body)', fontSize: '0.95rem', transition: 'background var(--transition)'
@@ -44579,7 +44739,7 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
               <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--clr-text-soft)', marginTop: '2px' }}>Practice with targets & limits</span>
             </button>
 
-            {featuredApps.map(app => (
+            {filteredHamburgerApps.map(app => (
               <button key={app.key} onClick={() => { setMenuOpen(false); onSelect(app.key) }} style={{
                 display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px',
                 background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text)',
@@ -49021,6 +49181,9 @@ function AdditionApp({ onBack, completedTopics = [], goldMastery = [], markTopic
     setRevealed(true)
   }
 
+  advanceFnRef.current = handleSubmitOrNext
+  useAutoAdvance(revealed, advanceFnRef, isCorrect)
+
   useEffect(() => {
     if (!revealed || isCorrect) return
     const h = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmitOrNext() } }
@@ -49048,8 +49211,8 @@ function AdditionApp({ onBack, completedTopics = [], goldMastery = [], markTopic
           <h1 style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: 700, fontSize: '48px', color: '#F4F1ED', margin: '0 0 12px', lineHeight: 1.1 }}>
             Addition
           </h1>
-          <p style={{ color: '#988D84', fontSize: '0.9rem', margin: '0 0 24px', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>
-            Practice addition!
+          <p style={{ color: '#988D84', fontSize: '0.9rem', margin: '0 0 24px', fontFamily: 'Inter, sans-serif', fontWeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span>Practice addition!</span>
           </p>
           <KeyTerms topicKey="addition" />
 
@@ -49143,9 +49306,11 @@ function AdditionApp({ onBack, completedTopics = [], goldMastery = [], markTopic
         {/* Standard Mode View */}
         {additionMode === 'standard' && question && (
           <>
-            <div className="question-box">{loading || !question ? 'Loading question…' : `${question.prompt} = ?`}</div>
+            <div className="question-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span>{loading || !question ? 'Loading question…' : `${question.prompt} = ?`}</span>
+            </div>
             <input className="answer-input" type="text" value={answer} onChange={(e) => { if (!revealed) { const v = e.target.value; if (v === '' || v === '-' || /^-?\d+$/.test(v)) setAnswer(v) } }} disabled={revealed} placeholder="Type your answer" />
-            <NumPad value={answer} onChange={(v) => !revealed && setAnswer(v)} disabled={revealed} />
+            {!revealed && <NumPad value={answer} onChange={(v) => !revealed && setAnswer(v)} disabled={revealed} />}
           </>
         )}
 
@@ -49310,7 +49475,6 @@ function AdditionApp({ onBack, completedTopics = [], goldMastery = [], markTopic
             </div>
           )
         })()}
-
         {renderFeedback(feedback, isCorrect)}
 
         {/* Action Controls */}
@@ -50468,6 +50632,9 @@ function BasicArithApp({ onBack, completedTopics = [], goldMastery = [], markTop
     setRevealed(true)
   }
 
+  advanceFnRef.current = handleSubmitOrNext
+  useAutoAdvance(revealed, advanceFnRef, isCorrect)
+
   useEffect(() => {
     if (!revealed || isCorrect) return
     const h = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmitOrNext() } }
@@ -50481,7 +50648,9 @@ function BasicArithApp({ onBack, completedTopics = [], goldMastery = [], markTop
   return (
     <QuizLayout title="Origin" subtitle="Add, subtract, multiply & divide positive & negative numbers" onBack={onBack} timer={started && !finished ? timer : null}>
       {!started && !finished && <div className="welcome-box">
-        <p className="welcome-text">Practice basic arithmetic!</p>
+        <p className="welcome-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <span>Practice basic arithmetic!</span>
+        </p>
         <KeyTerms topicKey="basic-arithmetic" />
         <div className="checkbox-group" style={{ marginBottom: '12px' }}>
           {['easy', 'medium', 'hard', 'extrahard'].map(d => (
@@ -50549,7 +50718,9 @@ function BasicArithApp({ onBack, completedTopics = [], goldMastery = [], markTop
           {isAdaptive && <div className="progress-pill" style={{ background: ADAPT_COLORS[curAdaptLevel], color: '#fff' }}>{ADAPT_LABELS[curAdaptLevel]}</div>}
         </div>
         {isAdaptive && <DifficultySlider pct={adaptivePct(adaptScore)} onChange={(p) => { const v = (p / 100) * 3; setAdaptScore(v); adaptScoreRef.current = v }} />}
-        <div className="question-box">{loading || !question ? 'Loading question…' : `${question.prompt} = ?`}</div>
+        <div className="question-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <span>{loading || !question ? 'Loading question…' : `${question.prompt} = ?`}</span>
+        </div>
         <input className="answer-input" type="text" value={answer} onChange={e => { if (!revealed) { const v = e.target.value; if (v === '' || v === '-' || /^-?\d+$/.test(v)) setAnswer(v) } }} disabled={revealed} placeholder="Type your answer" />
         <NumPad value={answer} onChange={v => !revealed && setAnswer(v)} disabled={revealed} />
         {renderFeedback(feedback, isCorrect)}
@@ -52592,11 +52763,26 @@ function makeMCQuizApp({ title, subtitle, apiPath, diffLabels, tip, adaptiveOnly
     }, [isGoalMode]);
     const [results, setResults] = useState([])
     const [correctOption, setCorrectOption] = useState('')
+    const [questionSummary, setQuestionSummary] = useState({ easy: 0, medium: 0, hard: 0, extrahard: 0 })
     const timer = useTimer()
     const advanceFnRef = useRef(null)
     const adaptScoreRef = useRef(0)
     const submittedRef = useRef(false)
     const advancedRef = useRef(false)
+
+    const savedRef = useRef(false)
+
+    useEffect(() => {
+      if (!finished || savedRef.current) return
+      savedRef.current = true
+      saveGymResult({
+        gymName: title,
+        totalQuestions: totalQ,
+        correctAnswers: score,
+        timeTakenSeconds: timer.elapsed || 0,
+        questionSummary,
+      })
+    }, [finished, questionSummary])
 
     const effectiveDifficulty = () => isAdaptive ? adaptiveLevel(adaptScoreRef.current) : difficulty
 
@@ -52619,6 +52805,11 @@ function makeMCQuizApp({ title, subtitle, apiPath, diffLabels, tip, adaptiveOnly
         if (!data || !data.options || !Array.isArray(data.options) || data.options.length < 2) {
           throw new Error('Question payload missing options array')
         }
+        // Track difficulty of this question
+        setQuestionSummary(prev => ({
+          ...prev,
+          [diff]: (prev[diff] || 0) + 1
+        }))
         setQuestion(data)
         setSelectedOption('')
         setCorrectOption('')
@@ -52641,6 +52832,7 @@ function makeMCQuizApp({ title, subtitle, apiPath, diffLabels, tip, adaptiveOnly
       setTotalQ(t); setScore(0); setQuestionNumber(1); setResults([]); setStarted(true); setFinished(false)
       setAdaptScore(0); adaptScoreRef.current = 0
       submittedRef.current = false; advancedRef.current = false
+      setQuestionSummary({ easy: 0, medium: 0, hard: 0, extrahard: 0 })
     }
 
     useEffect(() => { if (started && !finished && questionNumber > 0) loadQuestion() }, [started, questionNumber])
@@ -52765,7 +52957,9 @@ function makeMCQuizApp({ title, subtitle, apiPath, diffLabels, tip, adaptiveOnly
     return (
       <QuizLayout title={title} subtitle={subtitle} onBack={onBack} timer={started && !finished && sessionGoal !== 'perfect' ? timer : null} sessionGoal={sessionGoal}>
         {!started && !finished && <div className="welcome-box">
-          <p className="welcome-text">Practice {title.toLowerCase()}!</p>
+          <p className="welcome-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span>Practice {title.toLowerCase()}!</span>
+          </p>
           {tip && <p style={{ fontSize: '0.85rem', color: 'var(--clr-dim)', marginBottom: '8px' }}>{tip}</p>}
           {topicKey && <KeyTerms topicKey={topicKey} />}
           {/* Difficulty selector — hidden entirely for adaptive-only puzzles
@@ -52840,7 +53034,9 @@ function makeMCQuizApp({ title, subtitle, apiPath, diffLabels, tip, adaptiveOnly
             {isAdaptive && <div className="progress-pill" style={{ background: ADAPT_COLORS[curAdaptLevel], color: '#fff' }}>{ADAPT_LABELS[curAdaptLevel]}</div>}
           </div>
           {question && <div style={{ textAlign: 'center' }}>
-            <div className="question-prompt" style={{ fontSize: '1.3rem', margin: '8px 0 4px', lineHeight: '1.4' }}><GlossaryText text={question.prompt} /></div>
+            <div className="question-prompt" style={{ fontSize: '1.3rem', margin: '8px 0 4px', lineHeight: '1.4', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <GlossaryText text={question.prompt} />
+            </div>
             <div className="options-grid" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: '12px', marginTop: '40px' }}>
               {question.options.map(opt => {
                 const isSelected = selectedOption === opt.option
@@ -53327,6 +53523,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     }
     advanceFnRef.current = advance
     useAutoAdvance(revealed, advanceFnRef, isCorrect)
+
     useEffect(() => {
       if (!revealed || isCorrect) return
       const h = (e) => { if (e.key === 'Enter') { e.preventDefault(); advance() } }
@@ -53451,8 +53648,8 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
             <p style={{ color: '#988D84', fontSize: '0.9rem', margin: '0 0 40px', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>
               {subtitle}
             </p>
-            <p style={{ color: '#988D84', fontSize: '0.9rem', margin: '0 0 24px', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>
-              Practice {title.toLowerCase()}!
+            <p style={{ color: '#988D84', fontSize: '0.9rem', margin: '0 0 24px', fontFamily: 'Inter, sans-serif', fontWeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span>Practice {title.toLowerCase()}!</span>
             </p>
             {tip && <p style={{ fontSize: '0.85rem', color: '#A89C93', marginBottom: '16px' }}>{tip}</p>}
             {topicKey && <KeyTerms topicKey={topicKey} />}
@@ -53543,7 +53740,9 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
             <DifficultySlider pct={adaptivePct(adaptScore)} onChange={(p) => { const v = (p / 100) * 3; setAdaptScore(v); adaptScoreRef.current = v }} />
           )}
           {question && <div style={{ textAlign: 'center' }}>
-            <div className="question-prompt" style={{ fontSize: '1.3rem', margin: '20px 0', lineHeight: '1.6' }}><GlossaryText text={question.prompt} /></div>
+            <div className="question-prompt" style={{ fontSize: '1.3rem', margin: '20px 0', lineHeight: '1.6', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <GlossaryText text={question.prompt} />
+            </div>
             <input className="answer-input" type="text" value={answer} onChange={e => { if (!revealed) setAnswer(e.target.value) }} disabled={revealed} placeholder={getPlaceholder()} onKeyDown={handleKeyDown} autoFocus />
           </div>}
           {!question && loading && <div style={{ textAlign: 'center', padding: '24px', color: 'var(--clr-text-soft)' }}>Loading question…</div>}
@@ -67396,6 +67595,273 @@ function LearningJourneyCheckpointQuizView({ topicId, onBack }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ProgressTrackerApp — Gym Quiz History Visualization
+// ─────────────────────────────────────────────────────────────────────────────
+function ProgressTrackerApp({ onBack }) {
+  const [selectedGym, setSelectedGym] = useState(SUPPORTED_GYMS[0])
+  const [page, setPage] = useState(0)
+  const [selectedPoint, setSelectedPoint] = useState(null)
+  const [allHistory, setAllHistory] = useState([])
+
+  useEffect(() => { setAllHistory(loadHistory()) }, [])
+
+  const gymRecords = useMemo(
+    () => allHistory.filter(r => r.gymName === selectedGym),
+    [allHistory, selectedGym]
+  )
+
+  const sortedRecords = useMemo(
+    () => [...gymRecords].sort((a, b) => new Date(b.date) - new Date(a.date)),
+    [gymRecords]
+  )
+
+  const totalSessions = gymRecords.length
+  const avgAccuracy = totalSessions > 0
+    ? parseFloat((gymRecords.reduce((s, r) => s + r.accuracy, 0) / totalSessions).toFixed(1))
+    : 0
+  const bestAccuracy = totalSessions > 0
+    ? parseFloat(Math.max(...gymRecords.map(r => r.accuracy)).toFixed(1))
+    : 0
+  const avgSpeed = totalSessions > 0
+    ? parseFloat((gymRecords.reduce((s, r) => s + (r.correctAnswers * 60) / r.timeTakenSeconds, 0) / totalSessions).toFixed(1))
+    : 0
+
+  const accelData = gymRecords
+    .slice()
+    .reverse()
+    .map((r, i) => ({ session: i + 1, accuracy: r.accuracy, record: r }))
+  const speedData = gymRecords
+    .slice()
+    .reverse()
+    .map((r, i) => {
+      const spd = r.timeTakenSeconds > 0 ? parseFloat(((r.correctAnswers * 60) / r.timeTakenSeconds).toFixed(1)) : 0
+      return { session: i + 1, speed: spd, record: r }
+    })
+
+  const yPadding = (min, max) => {
+    const range = max - min
+    return Math.max(1, range * 0.15)
+  }
+  const accelDomain = accelData.length > 0
+    ? [Math.max(0, Math.min(...accelData.map(d => d.accuracy)) - yPadding(Math.min(...accelData.map(d => d.accuracy)), Math.max(...accelData.map(d => d.accuracy)))),
+       Math.min(100, Math.max(...accelData.map(d => d.accuracy)) + yPadding(Math.min(...accelData.map(d => d.accuracy)), Math.max(...accelData.map(d => d.accuracy))))]
+    : [0, 100]
+  const speedMin = speedData.length > 0 ? Math.min(...speedData.map(d => d.speed)) : 0
+  const speedMax = speedData.length > 0 ? Math.max(...speedData.map(d => d.speed)) : 5
+  const speedDomain = [Math.max(0, speedMin - yPadding(speedMin, speedMax)), speedMax + yPadding(speedMin, speedMax)]
+
+  const makeChartOptions = (yLabel, ySuffix, yMin, yMax) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'var(--clr-surface)',
+        titleColor: 'var(--clr-text)',
+        bodyColor: 'var(--clr-text)',
+        borderColor: 'var(--clr-border)',
+        borderWidth: 1,
+        padding: 10,
+        displayColors: false,
+        callbacks: {
+          label: context => {
+            const value = context.parsed.y
+            return ySuffix ? `${value}${ySuffix}` : `${value}`
+          }
+        }
+      }
+    },
+    interaction: {
+      mode: 'index',
+      intersect: false
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Session Number', color: 'var(--clr-dim)' },
+        ticks: { color: 'var(--clr-dim)', font: { size: 13 } },
+        grid: { color: 'rgba(0, 0, 0, 0.08)' }
+      },
+      y: {
+        min: yMin,
+        max: yMax,
+        title: { display: true, text: yLabel, color: 'var(--clr-dim)' },
+        ticks: { color: 'var(--clr-dim)', font: { size: 13 }, callback: v => ySuffix ? `${v}${ySuffix}` : `${v}` },
+        grid: { color: 'rgba(0, 0, 0, 0.08)' }
+      }
+    }
+  })
+
+  const accuracyChartData = {
+    labels: accelData.map(d => d.session),
+    datasets: [{
+      label: 'Accuracy (%)',
+      data: accelData.map(d => d.accuracy),
+      borderColor: '#4caf50',
+      backgroundColor: 'rgba(76, 175, 80, 0.2)',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      tension: 0.4,
+      fill: false
+    }]
+  }
+
+  const speedChartData = {
+    labels: speedData.map(d => d.session),
+    datasets: [{
+      label: 'Correct answers/min',
+      data: speedData.map(d => d.speed),
+      borderColor: '#2196f3',
+      backgroundColor: 'rgba(33, 150, 243, 0.2)',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      tension: 0.4,
+      fill: false
+    }]
+  }
+
+  const accuracyChartOptions = makeChartOptions('Accuracy (%)', '%', accelDomain[0], accelDomain[1])
+  const speedChartOptions = makeChartOptions('Correct answers/min', '', speedDomain[0], speedDomain[1])
+
+  const PAGE_SIZE = 20
+  const paginated = sortedRecords.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
+  const formatDate = (iso) => {
+    const d = new Date(iso)
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]
+    const yy = d.getFullYear()
+    const hh = String(d.getHours()).padStart(2, '0')
+    const mm = String(d.getMinutes()).padStart(2, '0')
+    return `${dd}-${mo}-${yy} ${hh}:${mm}`
+  }
+
+  return (
+    <>
+      <div className="header-row">
+        <button className="back-button" onClick={onBack}>← Home</button>
+      </div>
+      <h1>Track Progress</h1>
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: 6 }}>Select Gym to Plot</label>
+        <select
+          value={selectedGym}
+          onChange={e => { setSelectedGym(e.target.value); setPage(0); setSelectedPoint(null) }}
+          style={{ width: '100%', padding: '8px 12px', borderRadius: 6, background: 'var(--clr-surface)', color: 'var(--clr-text)', border: '1px solid var(--clr-border)', fontSize: '0.95rem' }}
+        >
+          {SUPPORTED_GYMS.map(g => <option key={g} value={g}>{g}</option>)}
+        </select>
+      </div>
+
+      {totalSessions === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--clr-dim)' }}>
+          <div style={{ fontSize: '1.1rem', marginBottom: 8 }}>No progress history available for this Gym yet.</div>
+          <div>Complete a quiz to start tracking progress.</div>
+        </div>
+      ) : (
+        <>
+          {/* Summary Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
+            <div style={{ background: 'var(--clr-card)', border: '1px solid var(--clr-border)', borderRadius: 8, padding: '14px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--clr-dim)', marginBottom: 4 }}>Total Sessions</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalSessions}</div>
+            </div>
+            <div style={{ background: 'var(--clr-card)', border: '1px solid var(--clr-border)', borderRadius: 8, padding: '14px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--clr-dim)', marginBottom: 4 }}>Average Accuracy</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{avgAccuracy}%</div>
+            </div>
+            <div style={{ background: 'var(--clr-card)', border: '1px solid var(--clr-border)', borderRadius: 8, padding: '14px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--clr-dim)', marginBottom: 4 }}>Best Accuracy</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{bestAccuracy}%</div>
+            </div>
+            <div style={{ background: 'var(--clr-card)', border: '1px solid var(--clr-border)', borderRadius: 8, padding: '14px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--clr-dim)', marginBottom: 4 }}>Avg Speed</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{avgSpeed}/min</div>
+            </div>
+          </div>
+
+          {/* Accuracy Graph */}
+          <div style={{ background: 'var(--clr-card)', border: '1px solid var(--clr-border)', borderRadius: 10, padding: '16px', marginBottom: 16 }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: 12 }}>Accuracy vs Session Number</div>
+            <div style={{ width: '100%', height: 220 }}>
+              <Line data={accuracyChartData} options={accuracyChartOptions} />
+            </div>
+          </div>
+
+          {/* Speed Graph */}
+          <div style={{ background: 'var(--clr-card)', border: '1px solid var(--clr-border)', borderRadius: 10, padding: '16px', marginBottom: 16 }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: 12 }}>Speed vs Session Number</div>
+            <div style={{ width: '100%', height: 220 }}>
+              <Line data={speedChartData} options={speedChartOptions} />
+            </div>
+          </div>
+
+          {/* Session Table */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+              <thead>
+                <tr style={{ background: 'var(--clr-card)', borderBottom: '2px solid var(--clr-border)' }}>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--clr-dim)' }}>Date</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--clr-dim)' }}>Easy</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--clr-dim)' }}>Medium</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--clr-dim)' }}>Hard</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--clr-dim)' }}>Total</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--clr-dim)' }}>Correct</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--clr-dim)' }}>Accuracy</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--clr-dim)' }}>Correct/min</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.map(r => {
+                  const spd = r.timeTakenSeconds > 0 ? parseFloat(((r.correctAnswers * 60) / r.timeTakenSeconds).toFixed(1)) : 0
+                  return (
+                    <tr key={r.id} style={{ borderBottom: '1px solid var(--clr-border)' }}
+                      onClick={() => setSelectedPoint({ record: r, session: sortedRecords.indexOf(r) + 1 })}
+                      style={{ cursor: 'pointer' }}>
+                      <td style={{ padding: '8px 10px' }}>{formatDate(r.date)}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{r.questionSummary?.easy || 0}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{r.questionSummary?.medium || 0}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{r.questionSummary?.hard || 0}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{r.totalQuestions}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{r.correctAnswers}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: r.accuracy >= 80 ? '#4caf50' : r.accuracy >= 50 ? '#ff9800' : '#f44336' }}>{r.accuracy}%</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{spd}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalSessions > PAGE_SIZE && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginTop: 16 }}>
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                style={{ padding: '6px 16px', borderRadius: 6, background: 'var(--clr-card)', border: '1px solid var(--clr-border)', color: 'var(--clr-text)', cursor: page === 0 ? 'not-allowed' : 'pointer', opacity: page === 0 ? 0.4 : 1 }}
+              >
+                Previous
+              </button>
+              <span style={{ color: 'var(--clr-dim)', fontSize: '0.9rem' }}>
+                Page {page + 1} of {Math.ceil(totalSessions / PAGE_SIZE)}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(Math.ceil(totalSessions / PAGE_SIZE) - 1, p + 1))}
+                disabled={page >= Math.ceil(totalSessions / PAGE_SIZE) - 1}
+                style={{ padding: '6px 16px', borderRadius: 6, background: 'var(--clr-card)', border: '1px solid var(--clr-border)', color: 'var(--clr-text)', cursor: page >= Math.ceil(totalSessions / PAGE_SIZE) - 1 ? 'not-allowed' : 'pointer', opacity: page >= Math.ceil(totalSessions / PAGE_SIZE) - 1 ? 0.4 : 1 }}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  )
+}
+
 // Export main App component (entry point)
 
 
@@ -68090,4 +68556,3 @@ function MensurationLabApp({ onBack, initialDifficulty, initialNumQuestions, ini
 
 export default App
 export { AuthMenu }
-
