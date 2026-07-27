@@ -318,6 +318,23 @@ function injectGuidedSolverStyles() {
     .guided-solver-btn:hover {
       filter: brightness(1.1);
     }
+    .decimal-step-text {
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      display: inline-block;
+    }
+    .decimal-step-text.active {
+      transform: scale(1.05);
+      background: rgba(255, 215, 0, 0.1);
+      border: 1px dashed var(--clr-gold, #ffd700);
+    }
+    .decimal-step-text.completed {
+      transform: scale(1);
+      background: rgba(92, 184, 122, 0.08);
+      border: 1px solid var(--clr-correct, #5cb87a);
+    }
   `;
 
   const style = document.createElement('style');
@@ -441,18 +458,28 @@ export function GuidedSolver({ monsterId = 'bracketeer', onClose, onStartCure, i
       );
     } else if (monsterId === 'decimal-drifter') {
       const placesText = currentStep === 1 ? 'Places: ?' : 'Places: 2 (0.5=1, 0.4=1)';
-      const multText = currentStep < 2 ? '5 × 4 = ?' : '5 × 4 = 20';
-      const slideText = currentStep < 3 ? 'Final: ?' : currentStep === 3 ? 'Final: 0.20 👈' : 'Final: 0.2 ✨';
+      const multText = currentStep <= 2 ? '5 × 4 = ?' : '5 × 4 = 20';
+      const slideText = currentStep <= 3 ? 'Final: ?' : 'Final: 0.2 ✨';
+
+      // Define CSS classes dynamically for transitions
+      const placesClass = `decimal-step-text ${currentStep === 1 ? 'active' : 'completed'}`;
+      const multClass = `decimal-step-text ${currentStep === 2 ? 'active' : currentStep > 2 ? 'completed' : ''}`;
+      const slideClass = `decimal-step-text ${currentStep === 3 ? 'active' : currentStep > 3 ? 'completed' : ''}`;
+
+      // Dynamic color styling for components
+      const placesColor = currentStep === 1 ? 'var(--clr-accent)' : 'var(--clr-correct)';
+      const multColor = currentStep === 2 ? '#38bdf8' : currentStep > 2 ? 'var(--clr-correct)' : 'inherit';
+      const slideColor = currentStep === 3 ? 'var(--clr-accent)' : currentStep > 3 ? 'var(--clr-correct)' : 'inherit';
 
       return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
           <div style={{ fontSize: '18px', fontWeight: 600 }}>0.5 × 0.4</div>
-          <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: 'var(--clr-text-soft)' }}>
-            <span style={{ color: currentStep >= 1 ? 'var(--clr-accent)' : 'inherit' }}>{placesText}</span>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '14px', color: 'var(--clr-text-soft)' }}>
+            <span className={placesClass} style={{ color: placesColor }}>{placesText}</span>
             <span>·</span>
-            <span style={{ color: currentStep >= 2 ? '#38bdf8' : 'inherit' }}>{multText}</span>
+            <span className={multClass} style={{ color: multColor }}>{multText}</span>
             <span>·</span>
-            <span style={{ color: currentStep >= 3 ? 'var(--clr-correct)' : 'inherit' }}>{slideText}</span>
+            <span className={slideClass} style={{ color: slideColor }}>{slideText}</span>
           </div>
         </div>
       );
