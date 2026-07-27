@@ -1,5 +1,34 @@
 # Misconception Monsters — CHANGELOG
 
+## v0.1.2 — 2026-07-27 (Decimal Drifter progression fix, CSS transitions, upstream merge)
+
+**Session:** Bug fix and polish pass for the Decimal Drifter guided solver overlay, plus upstream synchronization.
+
+**Branch:** `feature/monster-misconceptions`.
+
+**Changes:**
+1. **Decimal Drifter Step Progression Fix:**
+   - Corrected step rendering logic in `GuidedSolver.jsx` (`renderCanvas()`) so `placesText`, `multText`, and `slideText` values only render when their respective step is active/completed.
+   - Prevents step answers (such as `5 × 4 = 20` and `Final: 0.2 ✨`) from displaying one step ahead of user progress.
+2. **CSS Transition Highlights:**
+   - Injected `.decimal-step-text` styles in `injectGuidedSolverStyles()`.
+   - Active steps highlight with scale-up (`1.05x`), gold dashed border, and gold background tint.
+   - Completed steps transition smoothly back to `1x` scale with a solid green border.
+3. **Upstream Merge & Conflict Resolution:**
+   - Merged latest `upstream/main` branch into `feature/monster-misconceptions`.
+   - Resolved conflicts in `App.jsx`, `WordSearchApp.jsx`, and `package-lock.json`.
+   - Maintained decoupled `useTimer` (`hooks/useTimer.js`) and `QuizLayout` (`components/QuizLayout.jsx`) imports.
+
+**Files touched:**
+- `client/src/monsters/GuidedSolver.jsx` (+33 / -6)
+- `client/src/App.jsx` (merged)
+- `client/src/language/WordSearchApp.jsx` (merged)
+- `client/package-lock.json` (merged)
+
+**Verification:** Build compiled cleanly (`npm run build` transformed 1325 modules with 0 errors). All monster unit test suites passing.
+
+---
+
 ## v0.1.1 — 2026-07-21 (Guided Solver copy: invitation over verdict)
 
 **Session:** Pedagogical review of the Guided Solver button text on the cure-result card.
