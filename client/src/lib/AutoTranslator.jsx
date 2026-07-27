@@ -319,12 +319,10 @@ const extraDicts = {
 
 export function AutoTranslator() {
   const { locale, translations } = useI18n();
-  const [enToCurrent, setEnToCurrent] = useState({});
   const enToCurrentRef = useRef({});
 
   useEffect(() => {
     if (locale === 'en' || !translations) {
-      setEnToCurrent({});
       enToCurrentRef.current = {};
       return;
     }
@@ -334,7 +332,6 @@ export function AutoTranslator() {
         map[en[key].trim().toLowerCase()] = translations[key];
       }
     }
-    setEnToCurrent(map);
     enToCurrentRef.current = map;
   }, [locale, translations]);
 
@@ -405,7 +402,7 @@ export function AutoTranslator() {
                     const resText = data[0].map(item => item[0]).join('');
                     localStorage.setItem(cacheKey, resText);
                     return resText;
-                  }).catch(e => trimmed);
+                  }).catch(() => trimmed);
               }
               window.pendingTrans[cacheKey].then(resText => {
                 // Ensure the node hasn't been modified by React while we were fetching
@@ -441,7 +438,7 @@ export function AutoTranslator() {
                       const resText = data[0].map(item => item[0]).join('');
                       localStorage.setItem(cacheKey, resText);
                       return resText;
-                    }).catch(e => ph);
+                    }).catch(() => ph);
                 }
                 window.pendingTrans[cacheKey].then(resText => {
                   if (resText && resText !== ph && node.getAttribute('placeholder') === ph) {
@@ -495,7 +492,7 @@ export function AutoTranslator() {
                          const resText = data[0].map(item => item[0]).join('');
                          localStorage.setItem(cacheKey, resText);
                          return resText;
-                       }).catch(e => trimmed);
+                       }).catch(() => trimmed);
                    }
                    window.pendingTrans[cacheKey].then(resText => {
                      if (resText && resText !== trimmed && node.nodeValue === original) {

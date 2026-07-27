@@ -3,6 +3,7 @@ import { useI18n, LANGUAGES } from './i18n';
 
 const AccessibilityContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAccessibility() {
   return useContext(AccessibilityContext);
 }
@@ -42,13 +43,19 @@ function LanguageSection() {
 
 export function AccessibilityProvider({ children }) {
   const { t } = useI18n();
-  const [dyslexiaFont, setDyslexiaFont] = useState(false);
-  const [textSize, setTextSize] = useState('normal'); // normal, large, xl
-  const [letterSpacing, setLetterSpacing] = useState(false);
-  const [highContrast, setHighContrast] = useState(false);
-  const [readingRuler, setReadingRuler] = useState(false);
-  const [colorTint, setColorTint] = useState('none'); // none, blue, peach, green (Irlen syndrome)
-  const [textToSpeech, setTextToSpeech] = useState(false);
+  const readSavedA11y = () => {
+    try {
+      return JSON.parse(localStorage.getItem('tenali-a11y')) || {};
+    } catch { return {}; }
+  };
+
+  const [dyslexiaFont, setDyslexiaFont] = useState(() => readSavedA11y().dyslexiaFont || false);
+  const [textSize, setTextSize] = useState(() => readSavedA11y().textSize || 'normal'); // normal, large, xl
+  const [letterSpacing, setLetterSpacing] = useState(() => readSavedA11y().letterSpacing || false);
+  const [highContrast, setHighContrast] = useState(() => readSavedA11y().highContrast || false);
+  const [readingRuler, setReadingRuler] = useState(() => readSavedA11y().readingRuler || false);
+  const [colorTint, setColorTint] = useState(() => readSavedA11y().colorTint || 'none'); // none, blue, peach, green (Irlen syndrome)
+  const [textToSpeech, setTextToSpeech] = useState(() => readSavedA11y().textToSpeech || false);
 
   const [mouseY, setMouseY] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -70,28 +77,13 @@ export function AccessibilityProvider({ children }) {
     window.speechSynthesis.speak(utterance);
   };
 
-  // Load from localStorage
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('tenali-a11y'));
-      if (saved) {
-        setDyslexiaFont(saved.dyslexiaFont || false);
-        setTextSize(saved.textSize || 'normal');
-        setLetterSpacing(saved.letterSpacing || false);
-        setHighContrast(saved.highContrast || false);
-        setReadingRuler(saved.readingRuler || false);
-        setColorTint(saved.colorTint || 'none');
-        setTextToSpeech(saved.textToSpeech || false);
-      }
-    } catch (e) {}
-  }, []);
-
   // Save to localStorage & apply to document
   useEffect(() => {
     const config = { dyslexiaFont, textSize, letterSpacing, highContrast, readingRuler, colorTint, textToSpeech };
     try {
       localStorage.setItem('tenali-a11y', JSON.stringify(config));
-    } catch (e) {}
+    } catch { // ignored
+    }
 
     const root = document.documentElement;
     root.setAttribute('data-a11y-dyslexia', dyslexiaFont);
@@ -99,7 +91,7 @@ export function AccessibilityProvider({ children }) {
     root.setAttribute('data-a11y-spacing', letterSpacing);
     root.setAttribute('data-a11y-contrast', highContrast ? 'high' : 'normal');
     root.setAttribute('data-a11y-tint', colorTint);
-  }, [dyslexiaFont, textSize, letterSpacing, highContrast, readingRuler, colorTint]);
+  }, [dyslexiaFont, textSize, letterSpacing, highContrast, readingRuler, colorTint, textToSpeech]);
 
   // Track mouse for reading ruler
   useEffect(() => {

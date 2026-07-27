@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTimer } from '../hooks/useTimer';
 import { QuizLayout } from '../components/QuizLayout';
+// eslint-disable-next-line no-unused-vars -- motion is used as <motion.div> in JSX
 import { motion, AnimatePresence } from 'framer-motion';
 import './WordSearchApp.css';
 
@@ -53,7 +54,12 @@ export default function WordSearchApp({ onBack }) {
   const [wordPositions, setWordPositions] = useState([]); // Array of { word, cells: [{r,c}] }
   const [targetWords, setTargetWords] = useState([]);
   const [solvedWords, setSolvedWords] = useState(new Set());
-  const [totalXp, setTotalXp] = useState(0);
+  const [totalXp, setTotalXp] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tenali_wordsearch_xp');
+      return saved ? Number(saved) : 0;
+    } catch { return 0; }
+  });
   const [levelXp, setLevelXp] = useState(0);
   const [hintsLeft, setHintsLeft] = useState(3);
   const [streak, setStreak] = useState(0);
@@ -66,14 +72,6 @@ export default function WordSearchApp({ onBack }) {
   const [successAnimation, setSuccessAnimation] = useState(false);
 
   const timer = useTimer();
-
-  // Load XP
-  useEffect(() => {
-    try {
-      const savedXp = localStorage.getItem('tenali_wordsearch_xp');
-      if (savedXp) setTotalXp(Number(savedXp));
-    } catch {}
-  }, []);
 
   // Keyboard navigation for escape key to deselect activeWord
   useEffect(() => {
@@ -206,7 +204,7 @@ export default function WordSearchApp({ onBack }) {
       setLevelXp(prev => prev + xpGained);
       const newTotal = totalXp + xpGained;
       setTotalXp(newTotal);
-      try { localStorage.setItem('tenali_wordsearch_xp', String(newTotal)); } catch {}
+      try { localStorage.setItem('tenali_wordsearch_xp', String(newTotal)); } catch { /* ignored */ }
 
       showToast(`Found "${matched.word}"! +${xpGained} XP`, 'correct');
       setSuccessAnimation(true);

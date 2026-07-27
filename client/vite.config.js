@@ -30,10 +30,14 @@ export default defineConfig({
   base: '/',
   // Enable React support for JSX compilation
   plugins: [react()],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['face-api.js'],
+  },
   server: {
-    // Listen on all network interfaces (0.0.0.0) for development
-    host: '0.0.0.0',
-    // Development server port
+    host: 'localhost',
     port: 5173,
     // API proxy configuration: Forward API requests to backend services
     proxy: {
@@ -85,6 +89,8 @@ export default defineConfig({
       '/addition-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Column Addition quiz API
       '/column-addition-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Column Division quiz API
+      '/column-division-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Column Multiplication quiz API
       '/column-multiplication-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       // Column Subtraction quiz API
@@ -171,12 +177,10 @@ export default defineConfig({
       '/polygons-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/similarity-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/dotprod-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
-      '/dotprodgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/squaring-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/tatsavit-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/lineareq-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/decimals-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
-      '/gymdecimals-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/permcomb-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/limits-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/invtrig-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
@@ -190,14 +194,22 @@ export default defineConfig({
       '/circmeasure-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/conics-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/diffeq-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
-      '/fracaddgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
-      '/funcgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
-      '/indicesgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
-      '/lineqgym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
-      '/polygym-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/matrixmystics-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/linearalgebra-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/la-mission-quiz-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/darts-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Sudoku quiz API
+      '/sudoku-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Math Riddles API
+      '/riddle-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Math Riddles static images
+      '/riddles': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      // Socket.IO (WebSocket upgrade)
+      '/socket.io': {
+        target: 'http://127.0.0.1:4000',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 })
