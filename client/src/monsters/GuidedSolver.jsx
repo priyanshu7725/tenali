@@ -100,7 +100,7 @@ function injectGuidedSolverStyles() {
       padding-bottom: 14px;
     }
     .guided-solver-title {
-      font-family: var(--font-display, sans-serif);
+      font-family: var(--font-display, 'Source Serif 4', serif);
       font-size: 24px;
       font-weight: 700;
       margin: 0;
@@ -113,7 +113,7 @@ function injectGuidedSolverStyles() {
     }
     .guided-solver-close {
       background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid var(--clr-border, rgba(255, 245, 230, 0.18));
       color: inherit;
       font-size: 18px;
       width: 32px;
@@ -126,7 +126,7 @@ function injectGuidedSolverStyles() {
       flex-shrink: 0;
     }
     .guided-solver-close:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--clr-hover-strong, rgba(255, 245, 230, 0.08));
     }
     .guided-math-canvas {
       background: rgba(0, 0, 0, 0.35);
@@ -250,7 +250,7 @@ function injectGuidedSolverStyles() {
       gap: 10px;
     }
     .guided-step-btn {
-      background: rgba(255, 255, 255, 0.04);
+      background: var(--clr-hover, rgba(255, 245, 230, 0.04));
       border: 1.5px solid var(--clr-border, rgba(255, 245, 230, 0.18));
       border-radius: 12px;
       color: var(--clr-text, #ede8e3);
@@ -266,8 +266,8 @@ function injectGuidedSolverStyles() {
       font-family: inherit;
     }
     .guided-step-btn:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.09);
-      border-color: rgba(255, 255, 255, 0.25);
+      background: var(--clr-hover-strong, rgba(255, 245, 230, 0.08));
+      border-color: var(--clr-border, rgba(255, 245, 230, 0.25));
     }
     .guided-step-btn.completed {
       border-color: var(--clr-correct, #5cb87a);
@@ -280,7 +280,7 @@ function injectGuidedSolverStyles() {
     }
     .guided-step-badge {
       font-size: 11px;
-      background: rgba(255, 255, 255, 0.15);
+      background: var(--clr-hover-strong, rgba(255, 245, 230, 0.15));
       padding: 2px 8px;
       border-radius: 10px;
       text-transform: uppercase;
@@ -311,7 +311,7 @@ function injectGuidedSolverStyles() {
       color: #fff;
     }
     .guided-solver-btn-secondary {
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--clr-surface, #362f2a);
       color: var(--clr-text, #ede8e3);
       border: 1px solid var(--clr-border, rgba(255, 245, 230, 0.18));
     }
@@ -554,7 +554,7 @@ export function GuidedSolver({ monsterId = 'bracketeer', onClose, onStartCure, i
 
       <div className="guided-solver-actions">
         <button className="guided-solver-btn guided-solver-btn-secondary" onClick={() => { setCurrentStep(1); setFrogVal(0); }}>
-          🔄 Reset Steps
+          Reset Steps
         </button>
         {onStartCure && (
           <button className="guided-solver-btn guided-solver-btn-primary" onClick={() => { onClose && onClose(); onStartCure(monsterId); }}>

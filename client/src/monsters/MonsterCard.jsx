@@ -105,20 +105,21 @@ function injectCardStyles() {
       min-width: 0;
     }
     .monster-card-name {
-      font-weight: 600;
-      font-size: 15px;
+      font-family: var(--font-display, 'Source Serif 4', serif);
+      font-weight: 700;
+      font-size: 16px;
       margin: 0 0 2px;
     }
     .monster-card-meta {
-      font-size: 12px;
-      opacity: 0.7;
+      font-size: 13px;
+      color: var(--clr-text-soft, #a89e94);
       margin: 0;
     }
     .monster-card-cure-badge {
       display: inline-block;
       padding: 2px 8px;
-      background: rgba(91, 141, 239, 0.18);
-      color: #8fb4ff;
+      background: var(--clr-accent-soft, rgba(232, 134, 74, 0.18));
+      color: var(--monster-primary, #e8864a);
       border-radius: 10px;
       font-size: 11px;
       font-weight: 600;

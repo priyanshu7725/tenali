@@ -96,13 +96,14 @@ function injectDetailStyles() {
       50%      { transform: scale(1.04) rotate(2deg); }
     }
     .monster-detail-name {
-      font-size: 22px;
+      font-family: var(--font-display, 'Source Serif 4', serif);
+      font-size: 24px;
       font-weight: 700;
       margin: 0 0 4px;
     }
     .monster-detail-tagline {
-      font-size: 14px;
-      opacity: 0.8;
+      font-size: 13px;
+      color: var(--clr-text-soft, #a89e94);
       font-style: italic;
       margin: 0;
     }
@@ -121,7 +122,7 @@ function injectDetailStyles() {
     .monster-detail-stat-value {
       font-size: 20px;
       font-weight: 700;
-      color: var(--monster-primary, #5b8def);
+      color: var(--clr-accent, #e8864a);
       display: block;
     }
     .monster-detail-hero.healed .monster-detail-stat-value {
@@ -141,12 +142,12 @@ function injectDetailStyles() {
       font-size: 13px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      opacity: 0.7;
+      color: var(--clr-accent, #e8864a);
       margin: 0 0 8px;
-      font-weight: 600;
+      font-weight: 700;
     }
     .monster-detail-description {
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.6;
       margin: 0;
     }
@@ -167,7 +168,7 @@ function injectDetailStyles() {
       font-family: inherit;
     }
     .monster-detail-btn-primary {
-      background: var(--monster-primary, #5b8def);
+      background: var(--clr-accent, #e8864a);
       color: white;
     }
     .monster-detail-hero.healed ~ .monster-detail-actions .monster-detail-btn-primary {
@@ -732,7 +733,7 @@ export function MonsterDetail({ monsterId, breachCount, lastAttempt, cureHistory
             setShowGuidedSolver(true);
           }}
         >
-          💡 Guided Solver
+          Guided Solver
         </button>
         <button
           className="monster-detail-btn monster-detail-btn-primary"

@@ -75,19 +75,19 @@ function injectHallStyles() {
       border-bottom: 1px solid var(--clr-border, rgba(255,245,230,0.18));
     }
     .monster-hall-title {
-      font-family: var(--font-display);
+      font-family: var(--font-display, 'Source Serif 4', serif);
       font-size: 24px;
       font-weight: 700;
       margin: 0;
     }
     .monster-hall-subtitle {
       font-size: 13px;
-      color: var(--clr-text-soft);
+      color: var(--clr-text-soft, #a89e94);
       margin-top: 2px;
     }
     .monster-hall-close {
       background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid var(--clr-border, rgba(255, 245, 230, 0.18));
       color: inherit;
       font-size: 18px;
       width: 32px;

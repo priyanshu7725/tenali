@@ -90,32 +90,37 @@ function injectToastStyles() {
       min-width: 0;
     }
     .monster-toast-title {
-      font-weight: 600;
+      font-family: var(--font-display, 'Source Serif 4', serif);
+      font-size: 15px;
+      font-weight: 700;
       margin-bottom: 2px;
     }
     .monster-toast.warning .monster-toast-title {
       color: var(--clr-accent, #e8864a);
     }
     .monster-toast-tagline {
-      font-size: 12px;
-      opacity: 0.8;
+      font-size: 13px;
+      color: var(--clr-text-soft, #a89e94);
     }
     .monster-toast-cta {
       margin-top: 8px;
-      padding: 6px 12px;
-      background: var(--monster-primary, #5b8def);
+      padding: 6px 14px;
+      background: var(--clr-accent, #e8864a);
       color: white;
       border: none;
-      border-radius: 6px;
-      font-size: 12px;
+      border-radius: var(--radius-sm, 10px);
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
+      font-family: inherit;
+      transition: opacity var(--transition, 180ms ease), transform var(--transition, 180ms ease);
     }
     .monster-toast.warning .monster-toast-cta {
       background: var(--clr-accent, #e8864a);
     }
     .monster-toast-cta:hover {
       opacity: 0.9;
+      transform: translateY(-1px);
     }
     @keyframes monster-toast-slidein {
       from {

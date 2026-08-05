@@ -116,16 +116,18 @@ function injectStyles() {
     }
     .monster-cure-title {
       margin: 0 0 16px;
-      font-family: var(--font-display);
-      font-size: 26px;
+      font-family: var(--font-display, 'Source Serif 4', serif);
+      font-size: 24px;
+      font-weight: 700;
     }
-    .monster-cure-progress { margin: 18px 0 8px; color: var(--clr-text-soft, #a89e94); font-size: 14px; width: 100%; text-align: left; }
+    .monster-cure-progress { margin: 18px 0 8px; color: var(--clr-text-soft, #a89e94); font-size: 13px; width: 100%; text-align: left; }
     .monster-cure-track { height: 7px; overflow: hidden; border-radius: 999px; background: var(--clr-surface, #362f2a); width: 100%; }
     .monster-cure-track > span { display: block; height: 100%; background: var(--clr-accent, #e8864a); transition: width .2s ease; }
     .monster-cure-question {
       margin: 24px 0 14px; padding: 20px; border-radius: var(--radius-sm, 10px);
-      text-align: center; font-size: 24px; font-weight: 700; width: 100%;
+      text-align: center; font-size: 22px; font-weight: 700; width: 100%;
       background: var(--clr-surface, #362f2a); border: 1px solid var(--clr-border, rgba(255,245,230,0.18));
+      font-family: var(--font-display, 'Source Serif 4', serif);
     }
     .monster-cure-input {
       box-sizing: border-box; width: 100%; padding: 13px 14px;
@@ -141,10 +143,10 @@ function injectStyles() {
     .monster-cure-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; width: 100%; }
     .monster-cure-actions button {
       padding: 12px 24px; border: 0; border-radius: var(--radius-sm, 10px);
-      cursor: pointer; font: inherit; font-weight: 700; transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+      cursor: pointer; font: inherit; font-size: 14px; font-weight: 600; transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
     }
     .monster-cure-primary { color: #fff; background: var(--clr-accent, #e8864a); box-shadow: var(--shadow-btn); }
-    .monster-cure-primary:hover { transform: translateY(-1px); background: #cc6a2e; }
+    .monster-cure-primary:hover { transform: translateY(-1px); filter: brightness(1.1); }
     .monster-cure-primary:active { transform: translateY(0); }
     .monster-cure-secondary { color: var(--clr-text-soft, #a89e94); background: var(--clr-surface, #362f2a); border: 1px solid var(--clr-border, rgba(255,245,230,0.18)) !important; }
     .monster-cure-secondary:hover { background: var(--clr-hover-strong, rgba(255,245,230,0.08)); }
@@ -152,7 +154,7 @@ function injectStyles() {
     .monster-cure-good { color: var(--clr-correct, #5cb87a); font-weight: 600; }
     .monster-cure-bad  { color: var(--clr-wrong,   #e05a4a); font-weight: 600; }
     .monster-cure-result { text-align: center; padding: 12px 0; width: 100%; }
-    .monster-cure-result h3 { font-family: var(--font-display); font-size: 24px; margin: 16px 0 8px; }
+    .monster-cure-result h3 { font-family: var(--font-display, 'Source Serif 4', serif); font-size: 24px; margin: 16px 0 8px; }
     
     /* CELEBRATION POOF */
     .cure-poof-cloud {
