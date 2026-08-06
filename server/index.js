@@ -120,6 +120,7 @@ app.use(express.static(clientDistPath));
 const auth = require('./auth');
 const transferScenarios = require('./transferScenarios');
 const progress = require('./progress');
+const hints = require('./hints');
 const translate = require('./translate');
 
 // Load static collections definitions
@@ -132,6 +133,7 @@ try {
 }
 app.use('/api/auth', auth.router);
 app.use('/api/progress', progress.router);
+app.use('/api/hints', hints);
 app.use('/api/translate', translate.router);
 auth.seedUsers().catch(() => {});  // always populate in-memory fallback
 
@@ -518,6 +520,7 @@ app.use(async (req, res, next) => {
 
 
 const { generateExplanation } = require('./explanations');
+global.generateExplanation = generateExplanation;
 
 /**
  * Generate a random integer between min and max (inclusive)

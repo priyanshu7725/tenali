@@ -21,6 +21,8 @@
  * Progress persistence: Adaptive tables app saves current table progress in localStorage
  */
 
+import { HintModal } from './components/HintSystem/HintModal.jsx';
+import { useQuizHintsAndXp } from './components/HintSystem/useHints.jsx';
 import React, { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import VoiceAssistant from './components/VoiceAssistant';
 import { motion } from 'framer-motion';
@@ -113,7 +115,7 @@ import BattleApp from './BattleApp'
 import SudokuApp from './SudokuApp'
 
 // API base URL from environment variables (Vite)
-const API = import.meta.env.VITE_API_BASE_URL || '';
+export const API = import.meta.env.VITE_API_BASE_URL || '';
 
 // Base path the app is mounted at (e.g. '/summership' in production, '' at root).
 // Derived from Vite's build-time base so path routing + internal navigation work
@@ -47570,6 +47572,7 @@ function GKApp({ onBack, markTopicCompleted, isGoalMode = false }) {
   }, [isGoalMode]);
   // Timer for tracking response time per question
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('gk', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   // Guard ref: prevents double-fetch from React StrictMode concurrent effect invocations
   const fetchingRef = useRef(false)
   // Tracks the in-flight question fetch so unmounting can cancel it — the
@@ -47834,7 +47837,8 @@ function GKApp({ onBack, markTopicCompleted, isGoalMode = false }) {
         <ResultsTable results={results} />
         <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
       </div>}
-    </QuizLayout>
+    <HintModal concept={'gk'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
   )
 }
 
@@ -54142,6 +54146,7 @@ function makeMCQuizApp({ title, subtitle, apiPath, diffLabels, tip, adaptiveOnly
     const [correctOption, setCorrectOption] = useState('')
     const [questionSummary, setQuestionSummary] = useState({ easy: 0, medium: 0, hard: 0, extrahard: 0 })
     const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp(apiPath.split('-')[0], finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
     const advanceFnRef = useRef(null)
     const adaptScoreRef = useRef(0)
     const submittedRef = useRef(false)
@@ -54453,7 +54458,8 @@ function makeMCQuizApp({ title, subtitle, apiPath, diffLabels, tip, adaptiveOnly
           <ResultsTable results={results} />
           <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
         </div>}
-      </QuizLayout>
+      <HintModal concept={apiPath.split('-')[0]} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
     )
   }
 }
@@ -54831,6 +54837,7 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
     }, [isGoalMode]);
     const [results, setResults] = useState([])
     const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp(apiPath.split('-')[0], finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
     const advanceFnRef = useRef(null)
     // Keep a ref for adaptive score so loadQuestion always sees latest
     const adaptScoreRef = useRef(0)
@@ -55169,7 +55176,8 @@ function makeQuizApp({ title, subtitle, apiPath, diffLabels, placeholders, tip, 
           <ResultsTable results={results} />
           <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
         </div>}
-      </QuizLayout>
+      <HintModal concept={apiPath.split('-')[0]} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
     )
   }
 }
@@ -56138,6 +56146,7 @@ function GymApp({ onBack }) {
   const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState('')
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('gym', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   const sessionGoal = 'standard'
   const isAdaptive = true
   const handleTimeout = async () => {
@@ -57813,6 +57822,7 @@ function RandomMixApp({ onBack, isGoalMode = false }) {
     }
   }, [isGoalMode]);
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('mix', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   const advanceFnRef = useRef(null)
   const submittedRef = useRef(false)
   const advancedRef = useRef(false)
@@ -58142,7 +58152,8 @@ function RandomMixApp({ onBack, isGoalMode = false }) {
             <button onClick={startQuiz}>Start Random Mix</button>
           </div>
         </div>
-      </QuizLayout>
+      <HintModal concept={'mix'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
     )
   }
 
@@ -58314,6 +58325,7 @@ function SetsApp({ onBack, isGoalMode = false }) {
     }
   }, [isGoalMode]);
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('sets', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   const advanceFnRef = useRef(null)
   const advancedRef = useRef(false)
   const submittedRef = useRef(false)
@@ -58519,7 +58531,8 @@ function SetsApp({ onBack, isGoalMode = false }) {
         <ResultsTable results={results} />
         <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
       </div>}
-    </QuizLayout>
+    <HintModal concept={'sets'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
   )
 }
 
@@ -58549,6 +58562,7 @@ function SequencesApp({ onBack, isGoalMode = false }) {
     }
   }, [isGoalMode]);
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('sequences', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   const advanceFnRef = useRef(null)
   const advancedRef = useRef(false)
   const submittedRef = useRef(false)
@@ -58746,7 +58760,8 @@ function SequencesApp({ onBack, isGoalMode = false }) {
         <ResultsTable results={results} />
         <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
       </div>}
-    </QuizLayout>
+    <HintModal concept={'sequences'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
   )
 }
 
@@ -58786,6 +58801,7 @@ function RatioApp({ onBack, completedTopics = [], goldMastery = [], markTopicCom
     }
   }, [isGoalMode]);
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('ratio', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   const advanceFnRef = useRef(null)
   const advancedRef = useRef(false)
   const submittedRef = useRef(false)
@@ -59024,7 +59040,8 @@ function RatioApp({ onBack, completedTopics = [], goldMastery = [], markTopicCom
         <ResultsTable results={results} />
         <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
       </div>}
-    </QuizLayout>
+    <HintModal concept={'ratio'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
   )
 }
 
@@ -60068,6 +60085,7 @@ function IndicesApp({ onBack, isGoalMode = false }) {
     }
   }, [isGoalMode]);
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('indices', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   const advanceFnRef = useRef(null)
 
   const effectiveDiff = () => (isAdaptive) ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -60316,7 +60334,8 @@ function IndicesApp({ onBack, isGoalMode = false }) {
           <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
         </div>
       )}
-    </QuizLayout>
+    <HintModal concept={'indices'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
   )
 }
 
@@ -60358,6 +60377,7 @@ function SurdsApp({ onBack, isGoalMode = false }) {
     }
   }, [isGoalMode]);
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('surds', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   const advanceFnRef = useRef(null)
 
   const effectiveDiff = () => (isAdaptive) ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -60639,7 +60659,8 @@ function SurdsApp({ onBack, isGoalMode = false }) {
           <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
         </div>
       )}
-    </QuizLayout>
+    <HintModal concept={'surds'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
   )
 }
 
@@ -60691,6 +60712,7 @@ function FractionAddApp({ onBack, completedTopics = [], goldMastery = [], markTo
   }, [isGoalMode]);
   // Timer for per-question timing
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('fractionadd', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
 
   // ── Refs for auto-advance ────────────────────────────────────────────
   const advanceFnRef = useRef(null)
@@ -61086,7 +61108,8 @@ function FractionAddApp({ onBack, completedTopics = [], goldMastery = [], markTo
           <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
         </div>
       )}
-    </QuizLayout>
+    <HintModal concept={'fractionadd'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
   )
 }
 
@@ -61503,6 +61526,7 @@ function SqrtApp({ onBack, isGoalMode = false }) {
   }, [isGoalMode]);
   // Timer instance for tracking time per question
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('sqrt', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   const advanceFnRef = useRef(null)
 
   const effectiveDiff = () => (isAdaptive) ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -61746,7 +61770,8 @@ function SqrtApp({ onBack, isGoalMode = false }) {
         <ResultsTable results={results} />
         <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
       </div>}
-    </QuizLayout>
+    <HintModal concept={'sqrt'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
   )
 }
 
@@ -63446,6 +63471,7 @@ function FuncEvalApp({ onBack, isGoalMode = false }) {
   }, [isGoalMode]);
   // Timer instance for tracking elapsed time per question
   const timer = useTimer()
+  const { hintsUsedCount, xpBreakdown, bonusLoading } = useQuizHintsAndXp('funceval', finished, score, totalQ, typeof isCorrect !== 'undefined' ? (isCorrect || false) : false, results);
   const advanceFnRef = useRef(null)
 
   const effectiveDiff = () => (isAdaptive) ? adaptiveLevel(adaptScoreRef.current) : difficulty
@@ -63674,7 +63700,8 @@ function FuncEvalApp({ onBack, isGoalMode = false }) {
         <ResultsTable results={results} />
         <button onClick={() => { setStarted(false); setFinished(false) }}>Play Again</button>
       </div>}
-    </QuizLayout>
+    <HintModal concept={'funceval'} questionId={question?.id || 'unknown'} questionData={question} revealed={revealed} hintsUsedCount={hintsUsedCount} xpBreakdown={xpBreakdown} bonusLoading={bonusLoading} />
+</QuizLayout>
   )
 }
 
@@ -69967,6 +69994,27 @@ function MensurationLabApp({ onBack, initialDifficulty, initialNumQuestions, ini
   };
 
   return <GenericLabApp title="Mensuration" subtitle="Geometry & Shape Puzzles" endpoint="/api/mensuration-lab" onBack={onBack} renderQuestionCustom={renderCustom} initialDifficulty={initialDifficulty} initialNumQuestions={initialNumQuestions} initialStarted={initialStarted} />;
+}
+
+
+export function getLocalXp() {
+  try {
+    const val = localStorage.getItem('tenali_xp');
+    return val ? parseInt(val, 10) : 0;
+  } catch { return 0; }
+}
+
+export function setLocalXp(val) {
+  try { localStorage.setItem('tenali_xp', val.toString()); } catch {}
+  // dispatch event to sync UI if needed
+  window.dispatchEvent(new CustomEvent('tenali_xp_update', { detail: { xp: val } }));
+}
+
+export function changeXp(delta) {
+  const current = getLocalXp();
+  const next = Math.max(0, current + delta);
+  setLocalXp(next);
+  return next;
 }
 
 export default App
