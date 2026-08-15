@@ -46,7 +46,7 @@ import LinearAlgebraApp from './LinearAlgebraApp'
 function useProgressSubmit(revealed, isCorrect, topic, questionId) {
   useEffect(() => {
     if (!revealed) return;
-    const token = localStorage.getItem('tenali-token');
+    const token = localStorage.getItem('tenali-auth-token');
     if (!token || !topic) return;
 
     const API = import.meta.env.VITE_API_BASE_URL || '';
@@ -1741,6 +1741,13 @@ function ScaffoldedTablesApp({ studentName, defaultTable = 2 }) {
   const [appPhase, setAppPhase] = useState('choosing')
   const [currentTable, setCurrentTable] = useState(null)
 
+  // Stable celebration emoji — picked once when the "MASTERED" screen
+  // mounts so the emoji doesn't flicker between 🎉 / 🏆 / ⭐ / 🌟 / 🎊 on
+  // every unrelated re-render (timer ticks, level transitions, etc.).
+  const [masteryEmoji] = useState(
+    () => ['🎉', '🏆', '⭐', '🌟', '🎊'][Math.floor(Math.random() * 5)]
+  )
+
   // ── Level:
   // 1 = show answer (13×2=26, student types 26)
   // 2 = partial table (5 rows, left or right column only)
@@ -2213,7 +2220,7 @@ function ScaffoldedTablesApp({ studentName, defaultTable = 2 }) {
           </h1>
           <div className="welcome-box">
             <p style={{ fontSize: '3rem', margin: '0.5rem 0' }}>
-              {['🎉', '🏆', '⭐', '🌟', '🎊'][Math.floor(Math.random() * 5)]}
+              {masteryEmoji}
             </p>
             <p className="welcome-text" style={{ fontSize: '1.3rem', color: 'var(--clr-accent)' }}>
               Fantastic work! You nailed {MASTERY_STREAK} in a row!
@@ -42511,11 +42518,11 @@ function App() {
       const currentMode = params.get('mode');
       if (mode) {
         if (currentMode !== mode) {
-          window.history.replaceState({}, '', `/?mode=${mode}`);
+          window.history.replaceState({}, '', `${BASE}/?mode=${mode}`);
         }
       } else {
         if (currentMode) {
-          window.history.replaceState({}, '', '/');
+          window.history.replaceState({}, '', `${BASE}/`);
         }
       }
     } catch (e) {
@@ -42542,6 +42549,23 @@ function App() {
   const [celebrationQueue, setCelebrationQueue] = useState([])
   const [transferTopic, setTransferTopic] = useState(null)
   const syncTimeoutRef = useRef(null)
+
+  // Generate confetti particles once per active celebration card so they
+  // don't teleport to new positions on every parent re-render (timer
+  // ticks, theme toggle, etc.). Keyed on the active celebration's identity
+  // so dismissing + re-enqueuing the same card produces a fresh burst.
+  const confettiParticles = React.useMemo(() => {
+    const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444'];
+    return Array.from({ length: 40 }).map((_, idx) => ({
+      id: idx,
+      left: Math.random() * 100,
+      delay: Math.random() * 2,
+      duration: Math.random() * 2 + 1.5,
+      size: Math.random() * 10 + 6,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+    }));
+  }, [celebrationQueue[0]?.title, celebrationQueue[0]?.message]);
 
   // Journey & Goal states from upstream
   const [isGoalMode, setIsGoalMode] = useState(false)
@@ -42619,7 +42643,7 @@ function App() {
     const fetchJourneyProgress = async () => {
       const API = import.meta.env.VITE_API_BASE_URL || '';
       try {
-        const token = localStorage.getItem('tenali-token');
+        const token = localStorage.getItem('tenali-auth-token');
         if (token) {
           const res = await fetch(`${API}/api/progress`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -42901,36 +42925,23 @@ function App() {
       setCelebrationQueue(prev => prev.slice(1));
     };
 
-    // Confetti particles generator (40 random floating pieces)
-    const renderConfetti = () => {
-      return Array.from({ length: 40 }).map((_, idx) => {
-        const left = Math.random() * 100;
-        const delay = Math.random() * 2;
-        const duration = Math.random() * 2 + 1.5;
-        const size = Math.random() * 10 + 6;
-        const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444'];
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        return (
-          <div
-            key={idx}
-            className="confetti-piece"
-            style={{
-              left: `${left}%`,
-              animationDelay: `${delay}s`,
-              animationDuration: `${duration}s`,
-              backgroundColor: color,
-              width: `${size}px`,
-              height: `${size}px`,
-              transform: `rotate(${Math.random() * 360}deg)`
-            }}
-          />
-        );
-      });
-    };
-
     return (
       <div className="celebration-overlay" onClick={dismissCelebration}>
-        {renderConfetti()}
+        {confettiParticles.map(p => (
+          <div
+            key={p.id}
+            className="confetti-piece"
+            style={{
+              left: `${p.left}%`,
+              animationDelay: `${p.delay}s`,
+              animationDuration: `${p.duration}s`,
+              backgroundColor: p.color,
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              transform: `rotate(${p.rotation}deg)`
+            }}
+          />
+        ))}
         <div className="celebration-card" onClick={e => e.stopPropagation()}>
           <h2 className="celebration-title">{active.title}</h2>
           <div className="celebration-badge-container">
@@ -43054,7 +43065,7 @@ function App() {
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
         <div className="app-shell"><div className="card">
-          <RiddleApp onBack={() => { window.location.href = '/' }} />
+          <RiddleApp onBack={() => { window.location.href = withBase('/') }} />
         </div></div>
       </>
     )
@@ -43500,13 +43511,13 @@ function App() {
         <div className="app-shell"><div className="card">
           <ProctoredQuiz
             quizType="linear-algebra"
-            onBack={() => { window.location.href = '/' }}
+            onBack={() => { window.location.href = withBase('/') }}
             autoStartConsent={true}
           >
-            <LinearAlgebraApp onBack={() => { window.location.href = '/' }} />
+            <LinearAlgebraApp onBack={() => { window.location.href = withBase('/') }} />
           </ProctoredQuiz>
         </div></div>
-        <a href="/proctor" className="proctor-dashboard-fab" title="Instructor Dashboard — view all proctor sessions">
+        <a href={withBase('/proctor')} className="proctor-dashboard-fab" title="Instructor Dashboard — view all proctor sessions">
           📊 Dashboard
         </a>
       </>
@@ -43522,7 +43533,7 @@ function App() {
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
         <div className="app-shell"><div className="card">
-          <ProctorDash onBack={() => { window.location.href = '/' }} />
+          <ProctorDash onBack={() => { window.location.href = withBase('/') }} />
         </div></div>
       </>
     )
@@ -43535,7 +43546,7 @@ function App() {
         <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
-        <PlaygroundApp onBack={() => { window.location.href = '/' }} />
+        <PlaygroundApp onBack={() => { window.location.href = withBase('/') }} />
       </>
     )
   }
@@ -43547,7 +43558,7 @@ function App() {
         <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
-        <BattleApp onBack={() => { window.location.href = '/' }} />
+        <BattleApp onBack={() => { window.location.href = withBase('/') }} />
       </>
     )
   }
@@ -43559,7 +43570,7 @@ function App() {
         <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
-        <SudokuApp onBack={() => { window.location.href = '/' }} />
+        <SudokuApp onBack={() => { window.location.href = withBase('/') }} />
       </>
     )
   }
@@ -43572,7 +43583,7 @@ function App() {
         <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
         </button>
-        <LocalCompilerApp onBack={() => { window.location.href = '/' }} />
+        <LocalCompilerApp onBack={() => { window.location.href = withBase('/') }} />
       </>
     )
   }
@@ -45323,7 +45334,7 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
               <button key={app.key} onClick={() => {
                 setMenuOpen(false);
                 if (app.isRedirect) {
-                  window.location.href = app.path;
+                  window.location.href = withBase(app.path);
                 } else {
                   onSelect(app.key);
                 }
@@ -45384,7 +45395,7 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
 
             <div style={{ height: '1px', background: 'var(--clr-border)', margin: '4px 0' }} />
 
-            <button onClick={() => { setMenuOpen(false); window.location.href = '/playground'; }} style={{
+            <button onClick={() => { setMenuOpen(false); window.location.href = withBase('/playground'); }} style={{
               display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px',
               background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text)',
               fontFamily: 'var(--font-body)', fontSize: '0.95rem', transition: 'background var(--transition)'
