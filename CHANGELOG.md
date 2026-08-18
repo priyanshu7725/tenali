@@ -19,9 +19,38 @@
 ---
 
 <!-- live-changelog:start -->
-### 📊 Total: 890 commits · 54 active days · 23 unique authors
+### 📊 Total: 908 commits · 57 active days · 25 unique authors
 
 > **📖 How to read this:** Each entry shows a clickable SHA, the author, and a one-line subject. Sub-bullets show the **exact files touched** with per-file `+additions −deletions`, the **total line stats**, and (when present) the **commit body** explaining what & why.
+
+#### 📅 2026-08-17  <sub>(4 commits)</sub>
+
+- 📌 [`4365828`](https://github.com/vicharanashala/tenali/commit/43658283c2571e7662bd0a996cdefb2b940eb336) — **github-actions[bot]** — 🤖 docs(contributors): refresh contributor stats
+    - 📁 **3 files:** `CHANGELOG.md` `+46 −8`, `CONTRIBUTORS.md` `+65 −20`, `README.md` `+16 −14`
+    - 📊 **`+127 −42`** · 3 files
+- 📌 [`486fcff`](https://github.com/vicharanashala/tenali/commit/486fcff69554d99a324b17f27bba799eb851f986) — **jgupta05072003-code** — 🔀 PR [#97](https://github.com/vicharanashala/tenali/pull/97) from `remy-baastin` — feat/ct-and-cr
+- 📌 [`99c062e`](https://github.com/vicharanashala/tenali/commit/99c062e88882837520c980c620b1af56fcb48ddf) — **jgupta05072003-code** — 🔀 PR [#74](https://github.com/vicharanashala/tenali/pull/74) from `bangerashreejal-cs` — feature/reading-traps-levels
+- 📌 [`3ed78c2`](https://github.com/vicharanashala/tenali/commit/3ed78c2111f2683f5b7a57df68046fcc13da1784) — **github-actions[bot]** — 🤖 docs(contributors): refresh contributor stats
+    - 📁 **3 files:** `CHANGELOG.md` `+5 −2`, `CONTRIBUTORS.md` `+5 −5`, `README.md` `+4 −4`
+    - 📊 **`+14 −11`** · 3 files
+
+#### 📅 2026-08-16  <sub>(2 commits)</sub>
+
+- 📌 [`c513b82`](https://github.com/vicharanashala/tenali/commit/c513b82ad2c763f9cea90cfa59f797ed7146e4a4) — **github-actions[bot]** — 🤖 docs(contributors): refresh contributor stats
+    - 📁 **3 files:** `CHANGELOG.md` `+7 −1`, `CONTRIBUTORS.md` `+4 −4`, `README.md` `+4 −4`
+    - 📊 **`+15 −9`** · 3 files
+- 📌 [`5fb4bfc`](https://github.com/vicharanashala/tenali/commit/5fb4bfcf927f6ee547c566aad332384c380ebb83) — **github-actions[bot]** — 🤖 docs(contributors): refresh contributor stats
+    - 📁 **3 files:** `CHANGELOG.md` `+5 −2`, `CONTRIBUTORS.md` `+26 −26`, `README.md` `+5 −5`
+    - 📊 **`+36 −33`** · 3 files
+
+#### 📅 2026-08-15  <sub>(2 commits)</sub>
+
+- 📌 [`752511d`](https://github.com/vicharanashala/tenali/commit/752511d401b670d0ef3e2e58178b613876799cf8) — **github-actions[bot]** — 🤖 docs(contributors): refresh contributor stats
+    - 📁 **3 files:** `CHANGELOG.md` `+7 −1`, `CONTRIBUTORS.md` `+26 −26`, `README.md` `+6 −6`
+    - 📊 **`+39 −33`** · 3 files
+- 📌 [`f79bc6d`](https://github.com/vicharanashala/tenali/commit/f79bc6dc48afb984133a389b3f2a5fdd89ce4e4c) — **github-actions[bot]** — 🤖 docs(contributors): refresh contributor stats
+    - 📁 **3 files:** `CHANGELOG.md` `+5 −2`, `CONTRIBUTORS.md` `+5 −5`, `README.md` `+4 −4`
+    - 📊 **`+14 −11`** · 3 files
 
 #### 📅 2026-08-14  <sub>(2 commits)</sub>
 
@@ -169,9 +198,12 @@
     - 📁 **1 file:** `README.md` `+5 −5`
     - 📊 **`+5 −5`** · 1 file
 
-#### 📅 2026-08-05  <sub>(4 commits)</sub>
+#### 📅 2026-08-05  <sub>(5 commits)</sub>
 
 - 📌 [`f802616`](https://github.com/vicharanashala/tenali/commit/f8026169b8acbd7d3a2bbad12671ccd59b666b1d) — **harshyy07** — Merge branch 'main' into feat-hints
+- 📌 [`fcf9274`](https://github.com/vicharanashala/tenali/commit/fcf92744bfab006cd2463fb1b54b9fc446421891) — **Shreejal Bangera** — Modified interaction in level 5,6,7 and improved overall quiz flow
+    - 📁 **1 file:** `client/src/vachana/exercises/ReadingTraps.jsx` `+270 −145`
+    - 📊 **`+270 −145`** · 1 file
 - 📌 [`9e736b9`](https://github.com/vicharanashala/tenali/commit/9e736b9c6c01a24a6e50031b632a25adbe0af22f) — **harshyy07** — Merge branch 'main' into feat-hints
 - 📌 [`72d481b`](https://github.com/vicharanashala/tenali/commit/72d481bbf630939bb0dcd94ea923e910bf072bc2) — **github-actions[bot]** — 🤖 docs(contributors): refresh contributor stats
     - 📁 **1 file:** `README.md` `+4 −4`
@@ -180,8 +212,11 @@
     - 📁 **1 file:** `README.md` `+4 −4`
     - 📊 **`+4 −4`** · 1 file
 
-#### 📅 2026-08-04  <sub>(3 commits)</sub>
+#### 📅 2026-08-04  <sub>(5 commits)</sub>
 
+- 📌 [`f2f81c7`](https://github.com/vicharanashala/tenali/commit/f2f81c79ca050b46dd4858738a0dac24527139cb) — **Shreejal Bangera** — Improve level 3 and level 4 interactions and visuals
+    - 📁 **1 file:** `client/src/vachana/exercises/ReadingTraps.jsx` `+363 −133`
+    - 📊 **`+363 −133`** · 1 file
 - 📌 [`906fd50`](https://github.com/vicharanashala/tenali/commit/906fd5072a5fd0bc5f57e97ddbe29d1ffb5f4320) — **github-actions[bot]** — 🤖 docs(contributors): refresh contributor stats
     - 📁 **1 file:** `README.md` `+3 −3`
     - 📊 **`+3 −3`** · 1 file
@@ -189,6 +224,9 @@
     - 📁 **1 file:** `README.md` `+5 −5`
     - 📊 **`+5 −5`** · 1 file
 - 📌 [`3120192`](https://github.com/vicharanashala/tenali/commit/3120192df6e0c919d86d0167587bf2abf7b3956b) — **harshyy07** — Merge branch 'main' into feat-hints
+- 📌 [`d97bc37`](https://github.com/vicharanashala/tenali/commit/d97bc378271108e2ffcde2444739d3f6c7042b47) — **Shreejal Bangera** — Improve Level 1 and 2 visual math interactions and question rendering
+    - 📁 **1 file:** `client/src/vachana/exercises/ReadingTraps.jsx` `+822 −143`
+    - 📊 **`+822 −143`** · 1 file
 
 #### 📅 2026-08-03  <sub>(44 commits)</sub>
 
@@ -373,8 +411,11 @@
     - 📁 **1 file:** `CHANGELOG.md` `+196 −0`
     - 📊 **`+196 −0`** · 1 file
 
-#### 📅 2026-07-27  <sub>(23 commits)</sub>
+#### 📅 2026-07-27  <sub>(24 commits)</sub>
 
+- 📌 [`4f9b1af`](https://github.com/vicharanashala/tenali/commit/4f9b1af10eed2ba70c61650c7c12e073543dfcf4) — **Shreejal Bangera** — minor UI changes
+    - 📁 **1 file:** `client/src/vachana/exercises/ReadingTraps.jsx` `+5 −5`
+    - 📊 **`+5 −5`** · 1 file
 - 📌 [`7e9db00`](https://github.com/vicharanashala/tenali/commit/7e9db00c273cc4953658fb7f1fe50dc1e8e3358c) — **muditagrawal2007** — 🔀 PR [#103](https://github.com/vicharanashala/tenali/pull/103) from `muditagrawal2007` — merge-newf-into-main
 - 🔀 [`8b505d3`](https://github.com/vicharanashala/tenali/commit/8b505d312e42bb2c84b3959cb1eccfc85f42a3aa) — **muditagrawal2007** — sync new_f into main — LA quiz length-bias fix + conflict resolution
 - 🐛 [`ac8d48b`](https://github.com/vicharanashala/tenali/commit/ac8d48b0f619a4074106f7cb0d4d44c6f410408b) — **muditagrawal2007** — strip trailing noise from MCQ options + use middle-dot padding
@@ -435,8 +476,14 @@
     - 📁 **3 files:** `client/src/CoordGeomDiscoveryApp.jsx` `+36 −27`, `client/src/GeometryApp.jsx` `+96 −24`, `client/src/VisualMathLabRedux.jsx` `+19 −16`
     - 📊 **`+151 −67`** · 3 files
 
-#### 📅 2026-07-24  <sub>(3 commits)</sub>
+#### 📅 2026-07-24  <sub>(5 commits)</sub>
 
+- ✨ [`529e63d`](https://github.com/vicharanashala/tenali/commit/529e63ded6505cbff75c0bb3e120c55e1165349a) — **remy-baastin** — CR real-world math pathways — The Car Journey
+    - 📁 **7 files:** `PR_CT_CR.md` `+125 −0`, `client/src/App.jsx` `+30 −7`, `client/src/CarJourneyApp.css` `+525 −0`, `client/src/CarJourneyApp.jsx` `+2173 −0`, `client/src/CjChallenge.jsx` `+507 −0`, `client/src/RealWorldHub.jsx` `+94 −0`, `client/src/cjReco.js` `+36 −0`
+    - 📊 **`+3490 −7`** · 7 files
+- ✨ [`d851367`](https://github.com/vicharanashala/tenali/commit/d8513673f59e5d63bf992819d0d3c9d5b94f7a33) — **remy-baastin** — CT platform-wide reflection journal
+    - 📁 **3 files:** `client/src/App.jsx` `+2 −0`, `client/src/ReflectionJournal.css` `+252 −0`, `client/src/ReflectionJournal.jsx` `+329 −0`
+    - 📊 **`+583 −0`** · 3 files
 - 📌 [`f490e54`](https://github.com/vicharanashala/tenali/commit/f490e544fee7de56fb632e3939981b2218574be6) — **muditagrawal2007** — 🔀 PR [#98](https://github.com/vicharanashala/tenali/pull/98) from `muditagrawal2007` — new
 - 🔀 [`2057383`](https://github.com/vicharanashala/tenali/commit/205738326afa2327e1bb5eb1c437d8d4813a694a) — **muditagrawal2007** — resolve conflicts from origin/main sync
 - ✨ [`82f3d62`](https://github.com/vicharanashala/tenali/commit/82f3d624340373b24f82eba9e89ff9f8593eded0) — **muditagrawal2007** — sync origin/main, secure proctor endpoints with admin-only access, add BattleApp features
@@ -616,7 +663,7 @@
     - 📁 **2 files:** `client/package-lock.json` `+95 −0`, `client/package.json` `+1 −0`
     - 📊 **`+96 −0`** · 2 files
 
-#### 📅 2026-07-20  <sub>(31 commits)</sub>
+#### 📅 2026-07-20  <sub>(32 commits)</sub>
 
 - ✨ [`cd026f3`](https://github.com/vicharanashala/tenali/commit/cd026f37d4b4af3185f226595d6de2004edea1df) — **S Hamsalekha** — Add support for tracking  user progress .
     - 📁 **3 files:** `client/package-lock.json` `+65 −23`, `client/package.json` `+1 −0`, `client/src/App.jsx` `+368 −1`
@@ -624,6 +671,9 @@
 - 🐛 [`7eb5580`](https://github.com/vicharanashala/tenali/commit/7eb5580e7c8f3c242860bc1541593a5685a540e3) — **S Hamsalekha** — Enable Vite dev server proxying for all the seven Gym APIs
     - 📁 **1 file:** `client/vite.config.js` `+7 −0`
     - 📊 **`+7 −0`** · 1 file
+- 📌 [`9e2114e`](https://github.com/vicharanashala/tenali/commit/9e2114e24025082e1274af9f92d6efb87a8b95c6) — **Shreejal Bangera** — Restructure Reading Traps module with revised levels, question flow, and assessments
+    - 📁 **1 file:** `client/src/vachana/exercises/ReadingTraps.jsx` `+347 −207`
+    - 📊 **`+347 −207`** · 1 file
 - 📌 [`d1ffff1`](https://github.com/vicharanashala/tenali/commit/d1ffff18f240f4ac3c7f6728e3c82258cf263274) — **jgupta05072003-code** — 🔀 PR [#52](https://github.com/vicharanashala/tenali/pull/52) from `24F3005086` — feature/concept-playgrounds
 - 📌 [`1d4d224`](https://github.com/vicharanashala/tenali/commit/1d4d224a4ce3c41d0742b8d9e6b38e15270401f8) — **jgupta05072003-code** — 🔀 PR [#51](https://github.com/vicharanashala/tenali/pull/51) from `24F3005086` — feature/i18n
 - 📌 [`7b0b000`](https://github.com/vicharanashala/tenali/commit/7b0b0002079ad06578c1ee687c0f792608bed39e) — **jgupta05072003-code** — 🔀 PR [#58](https://github.com/vicharanashala/tenali/pull/58) from `diptosubhro-ctrl` — tenali_main
@@ -682,18 +732,24 @@
     - 📁 **17 files:** `client/package-lock.json` `+611 −11`, `client/package.json` `+4 −1`, `client/src/App.css` `+227 −19`, `client/src/App.jsx` `+659 −63`, `client/src/CrossSectionApp.jsx` `+241 −0`, `client/src/NetBuilderApp.jsx` `+266 −0`, `client/src/ScribbleGuessApp.jsx` `+811 −0`, `client/src/ShapeSlicer3D.jsx` `+240 −0` *(+9 more in [`726393b`](https://github.com/vicharanashala/tenali/commit/726393bc2dc58717611066b8e5aa17acc46fae32))*
     - 📊 **`+4882 −257`** · 17 files
 
-#### 📅 2026-07-19  <sub>(1 commit)</sub>
+#### 📅 2026-07-19  <sub>(2 commits)</sub>
 
+- 📌 [`750aaa1`](https://github.com/vicharanashala/tenali/commit/750aaa1d26423d0d533cb2f4002a46bf969858e5) — **Shreejal Bangera** — Add progress tracking and results screen to Reading Traps
+    - 📁 **1 file:** `client/src/vachana/exercises/ReadingTraps.jsx` `+189 −39`
+    - 📊 **`+189 −39`** · 1 file
 - 🐛 [`f037028`](https://github.com/vicharanashala/tenali/commit/f0370287d1940e3e24032d7a3e2ab16221c4d4b4) — **24F3005086** — add missing locales files for i18n
     - 📁 **6 files:** `client/src/locales/bn.json` `+218 −0`, `client/src/locales/en.json` `+230 −0`, `client/src/locales/hi.json` `+242 −0`, `client/src/locales/mr.json` `+218 −0`, `client/src/locales/ta.json` `+218 −0`, `client/src/locales/te.json` `+218 −0`
     - 📊 **`+1344 −0`** · 6 files
 
-#### 📅 2026-07-18  <sub>(10 commits)</sub>
+#### 📅 2026-07-18  <sub>(12 commits)</sub>
 
 - ✨ [`f323215`](https://github.com/vicharanashala/tenali/commit/f3232157dcc43a535c08143d797f2b955c199096) — **SaniyaJos** — enhance contrast challenge with discovery steps and unified flow
     - 📁 **1 file:** `client/src/ContrastChallengeApp.jsx` `+6636 −1156`
     - 📊 **`+6636 −1156`** · 1 file
 - 📌 [`d5a95e1`](https://github.com/vicharanashala/tenali/commit/d5a95e172bbae5e63ada11ab88bd11d8024dca0d) — **SaniyaJos** — Merge remote-tracking branch 'upstream/main' into feat/contrast-challenge-enhancement
+- 📌 [`ab9339a`](https://github.com/vicharanashala/tenali/commit/ab9339a0ad95694f597c530e12b82efecff272b6) — **Shreejal Bangera** — Add Reading Traps multi-level exercise and gameplay improvements
+    - 📁 **2 files:** `client/src/vachana/exercises/ReadingTraps.jsx` `+537 −55`, `client/src/vachana/exercises/changelog.md` `+63 −0`
+    - 📊 **`+600 −55`** · 2 files
 - 🐛 [`a20f15f`](https://github.com/vicharanashala/tenali/commit/a20f15f23b11aae42f82f76b57b452bd0d751702) — **24F3005086** — remove MasteryBadge usage from concept playgrounds since it belongs to BKT branch
     - 📁 **2 files:** `client/src/lib/concept/QFormulaConceptApp.jsx` `+1 −2`, `client/src/lib/simul-concept/SimulConceptApp.jsx` `+1 −2`
     - 📊 **`+2 −4`** · 2 files
@@ -716,6 +772,9 @@
     - 📁 **3 files:** `client/public/settings_icon.svg` `+0 −29`, `client/src/vachana/exercises/NoiseFilter.jsx` `+89 −43`, `client/src/vachana/index.jsx` `+2 −1`
     - 📊 **`+91 −73`** · 3 files
 - 📌 [`4bfa35f`](https://github.com/vicharanashala/tenali/commit/4bfa35f5cb7b6961afb7b89129444d1bd57f4a83) — **muditagrawal2007** — Merge branch 'vicharanashala:main' into new_f
+- 📌 [`2cf3536`](https://github.com/vicharanashala/tenali/commit/2cf353600671734e630fb4e697e189c0396a1a93) — **Shreejal Bangera** — Implement Reading Traps overview and level navigation
+    - 📁 **1 file:** `client/src/vachana/exercises/ReadingTraps.jsx` `+184 −0`
+    - 📊 **`+184 −0`** · 1 file
 
 #### 📅 2026-07-17  <sub>(59 commits)</sub>
 
