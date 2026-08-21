@@ -79,7 +79,7 @@ It is built to run on a single VPS — `tenali.fun` — with one Node process se
 <p align="center">
   <table>
     <tr>
-      <td align="center"><b>899</b><br/><sub>commits</sub></td>
+      <td align="center"><b>900</b><br/><sub>commits</sub></td>
       <td align="center"><b>61</b><br/><sub>PRs merged</sub></td>
       <td align="center"><b>21</b><br/><sub>GitHub contributors</sub></td>
       <td align="center"><b>⭐ 0</b><br/><sub>stars</sub></td>
@@ -525,7 +525,7 @@ tenali.fun (DNS → <production IP — redacted from public docs>)
 <!-- live-snapshot:start -->
 | 🏆 Commits | 🔀 Merged PRs | 👥 Contributors | 🧩 Puzzles | 📚 Vocab | 🌍 GK |
 |----------:|------------:|--------------:|---------:|-------:|----:|
-| **899** | **61** | **21** | **69** | **7,662** | **991** |
+| **900** | **61** | **21** | **69** | **7,662** | **991** |
 <!-- live-snapshot:end -->
 
 ### 🥇 Leaderboard
@@ -539,7 +539,7 @@ _Live data — last regenerated 2026-08-21 · auto-refreshed by [`github-actions
 | 🥈 | **Mudit Agrawal** | [muditagrawal2007](https://github.com/muditagrawal2007) | **168** | 13  | Maintainer · Battle Arena · Linear Algebra · Sudoku · Playground |
 | 🥉 | **Jinal Gupta** | [jgupta05072003-code](https://github.com/jgupta05072003-code) | **83** | 0  | Upstream Repo Maintainer & PR Reviewer |
 | 4. | **Priyanshu Kumar** | [priyanshu7725](https://github.com/priyanshu7725) | **46** | 0  | — |
-| 5. | **github-actions-bot-**<br/><sub>↳ also commits as <b>github-actions[bot]</b></sub> | [github-actions-bot-](https://github.com/github-actions-bot-) | **43** | 0  | — |
+| 5. | **github-actions-bot-**<br/><sub>↳ also commits as <b>github-actions[bot]</b></sub> | [github-actions-bot-](https://github.com/github-actions-bot-) | **44** | 0  | — |
 | 6. | **Lakshmi Varshini Nandula ** | [varshini-nandula](https://github.com/varshini-nandula) | **43** | 1  | Profile Showcase & Offline Storage |
 | 7. | **Sameer Mishra** | [24F3005086](https://github.com/24F3005086) | **36** | 4  | i18n · Accessibility · Concept Labs |
 | 8. | **Vaibhav Satish**<br/><sub>↳ also commits as <b>Vaibhav</b></sub> | [Vaibhav-sa30](https://github.com/Vaibhav-sa30) | **35** | 2  | Vachana Literacy Lab & Vocabulary |
