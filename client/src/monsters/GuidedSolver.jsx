@@ -213,26 +213,55 @@ function injectGuidedSolverStyles() {
       transition: left 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       z-index: 2;
     }
-    .vertical-sum {
+    .vertical-sum-grid {
+      display: inline-grid;
+      grid-template-columns: 24px 28px 28px;
+      row-gap: 4px;
+      column-gap: 6px;
       border: 2px solid rgba(255, 255, 255, 0.15);
-      padding: 16px 24px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.3);
-      width: 120px;
-      font-family: var(--font-display, monospace);
-      font-size: 26px;
-      line-height: 1.4;
+      padding: 16px 22px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.35);
+      font-family: 'Outfit', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      align-items: center;
+      justify-items: center;
+      white-space: nowrap;
     }
-    .carry-row {
-      height: 24px;
-      font-size: 16px;
-      color: transparent;
-      transition: color 0.3s;
-      padding-left: 10px;
+    .vsg-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 32px;
     }
-    .carry-row.active {
+    .vsg-carry {
+      font-size: 18px;
       color: #9b59b6;
+      font-weight: 800;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      transform: translateY(4px);
+    }
+    .vsg-carry.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .vsg-line {
+      grid-column: 1 / -1;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 2px;
+      margin: 2px 0;
+    }
+    .vsg-result {
+      color: var(--clr-text-soft, #a89e94);
       font-weight: bold;
+    }
+    .vsg-result.complete {
+      color: var(--clr-correct, #5cb87a);
     }
     .guided-solver-feedback {
       font-size: 14px;
@@ -403,7 +432,7 @@ export function GuidedSolver({ monsterId = 'bracketeer', onClose, onStartCure, i
   // Render canvas content per monster
   function renderCanvas() {
     if (monsterId === 'bracketeer') {
-      const resText = currentStep === 1 ? '?' : currentStep === 2 ? '3x' : '3x + 15 ✨';
+      const resText = currentStep === 1 ? '?' : currentStep === 2 ? '3x' : '3x + 15';
       const multClass = currentStep >= 2 ? 'highlighted' : '';
       const xClass = currentStep >= 2 ? 'highlighted' : '';
       const yClass = currentStep >= 3 ? 'highlighted' : '';
@@ -459,7 +488,7 @@ export function GuidedSolver({ monsterId = 'bracketeer', onClose, onStartCure, i
     } else if (monsterId === 'decimal-drifter') {
       const placesText = currentStep === 1 ? 'Places: ?' : 'Places: 2 (0.5=1, 0.4=1)';
       const multText = currentStep <= 2 ? '5 × 4 = ?' : '5 × 4 = 20';
-      const slideText = currentStep <= 3 ? 'Final: ?' : 'Final: 0.2 ✨';
+      const slideText = currentStep <= 3 ? 'Final: ?' : 'Final: 0.2';
 
       // Define CSS classes dynamically for transitions
       const placesClass = `decimal-step-text ${currentStep === 1 ? 'active' : 'completed'}`;
@@ -484,19 +513,36 @@ export function GuidedSolver({ monsterId = 'bracketeer', onClose, onStartCure, i
         </div>
       );
     } else if (monsterId === 'carry-crasher') {
-      const carryActive = currentStep >= 2;
-      const tensResult = currentStep >= 3 ? '4' : ' ';
-      const onesResult = currentStep >= 1 ? '2' : ' ';
+      const carryActive = currentStep >= 3;
+      const isComplete = currentStep > 3;
+      const onesVal = currentStep === 1 ? '_' : '2';
+      const tensVal = isComplete ? '4' : '_';
 
       return (
-        <div className="vertical-sum">
-          <div className={`carry-row ${carryActive ? 'active' : ''}`}>
-            {carryActive ? '¹' : ''}
-          </div>
-          <div>  2 8</div>
-          <div>+ 1 4</div>
-          <div style={{ borderTop: '2px solid rgba(255, 255, 255, 0.4)', marginTop: '4px', paddingTop: '4px', color: 'var(--clr-gold)' }}>
-            {tensResult}{onesResult}
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+          <div className="vertical-sum-grid">
+            {/* Carry Row */}
+            <div className="vsg-cell" />
+            <div className={`vsg-cell vsg-carry ${carryActive ? 'active' : ''}`}>¹</div>
+            <div className="vsg-cell" />
+
+            {/* Row 1: 28 */}
+            <div className="vsg-cell" />
+            <div className="vsg-cell">2</div>
+            <div className="vsg-cell">8</div>
+
+            {/* Row 2: + 14 */}
+            <div className="vsg-cell" style={{ color: 'var(--clr-text-soft)' }}>+</div>
+            <div className="vsg-cell">1</div>
+            <div className="vsg-cell">4</div>
+
+            {/* Divider Line */}
+            <div className="vsg-line" />
+
+            {/* Result Row */}
+            <div className="vsg-cell" />
+            <div className={`vsg-cell vsg-result ${isComplete ? 'complete' : ''}`}>{tensVal}</div>
+            <div className={`vsg-cell vsg-result ${isComplete ? 'complete' : ''}`}>{onesVal}</div>
           </div>
         </div>
       );
