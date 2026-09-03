@@ -34,7 +34,7 @@ function answersMatch(submitted, expected) {
   const userNumber = Number(user);
   const correctNumber = Number(correct);
   if (Number.isFinite(userNumber) && Number.isFinite(correctNumber)) {
-    return Math.abs(userNumber - correctNumber) < 0.01;
+    return Math.abs(userNumber - correctNumber) < 1e-5;
   }
   return user.toLowerCase() === correct.toLowerCase();
 }
@@ -62,11 +62,11 @@ const HARDCODED_FALLBACKS = {
     { prompt: 'Expand: 6(2z + 1)', correctAnswer: '12z + 6' }
   ],
   'sign-swapper': [
-    { prompt: 'Calculate: -4 * -3', correctAnswer: '12' },
-    { prompt: 'Expand: -(x - 5)', correctAnswer: '-x + 5' },
-    { prompt: 'Calculate: -7 * -2', correctAnswer: '14' },
-    { prompt: 'Expand: -3(x - 4)', correctAnswer: '-3x + 12' },
-    { prompt: 'Expand: -(2x + 1)', correctAnswer: '-2x - 1' }
+    { prompt: 'Calculate: (-3) + 7', correctAnswer: '4' },
+    { prompt: 'Calculate: 5 - 12', correctAnswer: '-7' },
+    { prompt: 'Calculate: (-6) - 8', correctAnswer: '-14' },
+    { prompt: 'Calculate: 9 - (-4)', correctAnswer: '13' },
+    { prompt: 'Calculate: (-5) * 6', correctAnswer: '-30' }
   ],
   'decimal-drifter': [
     { prompt: 'Calculate: 0.3 * 0.4', correctAnswer: '0.12' },
