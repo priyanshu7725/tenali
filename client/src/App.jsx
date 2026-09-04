@@ -47693,7 +47693,7 @@ function GKApp({ onBack, markTopicCompleted, isGoalMode = false }) {
     const res = await fetch(`${API}/gk-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: option, sessionGoal }) })
     const data = await res.json()
     setIsCorrect(data.correct)
-    if (data.correct) setScore((s) => s + 1)
+    if (data.correct) setScore((s) => s + 1);
     // Show feedback with explanation
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
@@ -51980,7 +51980,7 @@ const fetchQuestion = async () => {
       const res = await fetch(`${API}/basicarith-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  a: question.a, b: question.b, op: question.op, answer: Number(answer), sessionGoal }) })
       const data = await res.json()
       setIsCorrect(data.correct)
-      if (data.correct) setScore(s => s + 1)
+      if (data.correct) setScore(s => s + 1);
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -52297,7 +52297,7 @@ const fetchQuestion = async (selectedDifficulty = difficulty) => {
       const termA = a * xSq
       const termB = b * x
       const sign = (v) => v >= 0 ? `+ ${v}` : `− ${Math.abs(v)}`
-      const reasoning = `y = ${a}(${x})² ${sign(b)}(${x}) ${sign(c)}\n= ${a}(${xSq}) ${sign(termB)} ${sign(c)}\n= ${termA} ${sign(termB)} ${sign(c)}\n= ${data.correctAnswer}`
+      const reasoning = `y = ${a}(${x})² ${sign(b)}(${x}) ${sign(c)}\n= ${a}(${xSq}) ${sign(termB)} ${sign(c)}\n= ${termA} ${sign(termB)} ${sign(c)}\n= ${data.correctAnswer}`;
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -53862,7 +53862,7 @@ const loadQuestion = async (excludeIds) => {
     const res = await fetch(`${API}/vocab-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: option, sessionGoal }) })
     const data = await res.json()
     setIsCorrect(data.correct)
-    if (data.correct) setScore((s) => s + 1)
+    if (data.correct) setScore((s) => s + 1);
     // Show feedback with correct answer text
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
@@ -55422,7 +55422,7 @@ const loadQuestion = async () => {
       const r = await fetch(`${API}/dotprod-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({ ...payload, sessionGoal }) })
       const data = await r.json()
       setIsCorrect(data.correct); setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
+      if (data.correct) setScore(s => s + 1);
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -57407,7 +57407,7 @@ const loadQuestion = async () => {
       const r = await fetch(`${API}/squaring-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  ...question, userAnswer, sessionGoal }) })
       const data = await r.json()
       setIsCorrect(data.correct); setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
+      if (data.correct) setScore(s => s + 1);
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -58419,7 +58419,7 @@ const loadQuestion = async () => {
       const r = await fetch(`${API}/sets-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({ ...payload, sessionGoal }) })
       const data = await r.json()
       setIsCorrect(data.correct); setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
+      if (data.correct) setScore(s => s + 1);
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -58649,7 +58649,7 @@ const loadQuestion = async () => {
       const r = await fetch(`${API}/sequences-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({ ...payload, sessionGoal }) })
       const data = await r.json()
       setIsCorrect(data.correct); setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
+      if (data.correct) setScore(s => s + 1);
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -58902,7 +58902,7 @@ const loadQuestion = async () => {
       const data = await r.json()
       setIsCorrect(data.correct)
       setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
+      if (data.correct) setScore(s => s + 1);
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -60186,9 +60186,9 @@ const loadQuestion = async () => {
       const data = await r.json()
       setIsCorrect(data.correct)
       setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
+      if (data.correct) setScore(s => s + 1);
 
-      const prompt = question.prompt
+      const prompt = question.prompt;
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -60511,9 +60511,9 @@ const loadQuestion = async () => {
       const data = await r.json()
       setIsCorrect(data.correct)
       setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
+      if (data.correct) setScore(s => s + 1);
 
-      const prompt = getPrompt(question)
+      const prompt = getPrompt(question);
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -60882,11 +60882,11 @@ const loadQuestion = async () => {
 
       setIsCorrect(data.correct)
       setRevealed(true)
-      if (data.correct) setScore(s => s + 1)
+      if (data.correct) setScore(s => s + 1);
 
       const prompt = question.mixed
         ? `${question.w1} ${question.n1}/${question.d1} ${op} ${question.w2} ${question.n2}/${question.d2}`
-        : `${question.n1}/${question.d1} ${op} ${question.n2}/${question.d2}`
+        : `${question.n1}/${question.d1} ${op} ${question.n2}/${question.d2}`;
 
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
@@ -61947,7 +61947,7 @@ const loadQuestion = async () => {
     const res = await fetch(`${API}/polymul-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  p1: question.p1, p2: question.p2, userCoeffs: userCoeffs.map(Number), userAnswer: userAnswerStr, sessionGoal }) })
     const data = await res.json()
     setIsCorrect(data.correct)
-    if (data.correct) setScore(s => s + 1)
+    if (data.correct) setScore(s => s + 1);
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
